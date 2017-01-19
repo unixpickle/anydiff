@@ -28,8 +28,8 @@ func TestAdd(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		v1 := makeRandomVec(c, 15)
 		v2 := makeRandomVec(c, 15)
-		ch := &VecChecker{
-			F: func() anydiff.Vec {
+		ch := &ResChecker{
+			F: func() anydiff.Res {
 				return anydiff.Add(v1, v2)
 			},
 			V: []*anydiff.Var{v1, v2},
@@ -42,8 +42,8 @@ func TestScale(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		v := makeRandomVec(c, 15)
 		scaler := c.MakeNumeric(-1.5)
-		ch := &VecChecker{
-			F: func() anydiff.Vec {
+		ch := &ResChecker{
+			F: func() anydiff.Res {
 				return anydiff.Scale(v, scaler)
 			},
 			V: []*anydiff.Var{v},
@@ -129,23 +129,23 @@ func TestMatMul(t *testing.T) {
 		m2x3 := makeMatrix(c, testMat2x3, 2, 3)
 		m3x4 := makeMatrix(c, testMat3x4, 3, 4)
 		m2x4 := makeMatrix(c, testMat2x4, 2, 4)
-		cases := []func() anydiff.Vec{
-			func() anydiff.Vec {
+		cases := []func() anydiff.Res{
+			func() anydiff.Res {
 				return anydiff.MatMul(false, false, m2x3, m3x4).Data
 			},
-			func() anydiff.Vec {
+			func() anydiff.Res {
 				return anydiff.MatMul(false, true, m3x4, m2x4).Data
 			},
-			func() anydiff.Vec {
+			func() anydiff.Res {
 				return anydiff.MatMul(true, false, m2x3, m2x4).Data
 			},
-			func() anydiff.Vec {
+			func() anydiff.Res {
 				return anydiff.MatMul(true, true, m3x4, m2x3).Data
 			},
 		}
 		for i, f := range cases {
 			t.Run(fmt.Sprintf("Case%d", i), func(t *testing.T) {
-				ch := &VecChecker{
+				ch := &ResChecker{
 					F: f,
 					V: []*anydiff.Var{m2x3.Data.(*anydiff.Var), m3x4.Data.(*anydiff.Var)},
 				}

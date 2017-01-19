@@ -13,13 +13,13 @@ const (
 	defaultPrec64 = 1e-5
 )
 
-// A VecChecker is a Checker for any function that returns
-// an anydiff.Vec.
+// A ResChecker is a Checker for any function that returns
+// an anydiff.Res.
 //
 // It requires that the numeric type is either float32 or
 // float64.
-type VecChecker struct {
-	F func() anydiff.Vec
+type ResChecker struct {
+	F func() anydiff.Res
 	V []*anydiff.Var
 
 	// Delta is the finite difference to use when computing
@@ -38,14 +38,14 @@ type VecChecker struct {
 }
 
 // FullCheck runs several variations of gradient checking.
-func (v *VecChecker) FullCheck(t *testing.T) {
+func (v *ResChecker) FullCheck(t *testing.T) {
 	t.Run("Standard", func(t *testing.T) {
 		Check(t, v, v.prec())
 	})
 	CheckVars(t, v, v.prec())
 	t.Run("Accumulated", func(t *testing.T) {
 		v1 := *v
-		v1.F = func() anydiff.Vec {
+		v1.F = func() anydiff.Res {
 			return accumulate(v.F())
 		}
 		Check(t, &v1, v1.prec())
@@ -53,13 +53,13 @@ func (v *VecChecker) FullCheck(t *testing.T) {
 }
 
 // Vars returns v.V.
-func (v *VecChecker) Vars() []*anydiff.Var {
+func (v *ResChecker) Vars() []*anydiff.Var {
 	return v.V
 }
 
 // Approx approximates the partial derivatives of the
 // output vector using finite differences.
-func (v *VecChecker) Approx(variable *anydiff.Var, idx int) anyvec.Vector {
+func (v *ResChecker) Approx(variable *anydiff.Var, idx int) anyvec.Vector {
 	delta := v.delta()
 	old := getComponent(variable.Vector, idx)
 	setComponent(variable.Vector, idx, old+delta)
@@ -75,7 +75,7 @@ func (v *VecChecker) Approx(variable *anydiff.Var, idx int) anyvec.Vector {
 
 // Exact computes the exact gradient of an output
 // component using automatic differentiation.
-func (v *VecChecker) Exact(comp int, g anydiff.Grad) {
+func (v *ResChecker) Exact(comp int, g anydiff.Grad) {
 	out := v.F()
 	oneHot := make([]float64, out.Output().Len())
 	oneHot[comp] = 1
@@ -84,21 +84,21 @@ func (v *VecChecker) Exact(comp int, g anydiff.Grad) {
 	out.Propagate(upstream, g)
 }
 
-func (v *VecChecker) delta() float64 {
+func (v *ResChecker) delta() float64 {
 	if v.Delta != 0 {
 		return v.Delta
 	}
 	return v.prec()
 }
 
-func (v *VecChecker) prec() float64 {
+func (v *ResChecker) prec() float64 {
 	if v.Prec != 0 {
 		return v.Prec
 	}
 	return v.defaultPrec()
 }
 
-func (v *VecChecker) defaultPrec() float64 {
+func (v *ResChecker) defaultPrec() float64 {
 	var n anyvec.Numeric
 	if len(v.V) > 0 {
 		n = v.V[0].Vector.Creator().MakeNumeric(0)
@@ -117,10 +117,10 @@ func (v *VecChecker) defaultPrec() float64 {
 
 type accumulatorRes struct {
 	OutVec anyvec.Vector
-	In     anydiff.Vec
+	In     anydiff.Res
 }
 
-func accumulate(in anydiff.Vec) anydiff.Vec {
+func accumulate(in anydiff.Res) anydiff.Res {
 	v := in.Output().Copy()
 	v.Scale(v.Creator().MakeNumeric(4))
 	return &accumulatorRes{

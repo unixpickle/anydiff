@@ -2,64 +2,64 @@ package anydiff
 
 import "github.com/unixpickle/anyvec"
 
-type scaleVec struct {
-	In     Vec
-	OutVec anyvec.Vector
+type scaleRes struct {
+	In     Res
+	OutRes anyvec.Vector
 	Scaler anyvec.Numeric
 }
 
-// Scale scales the components of a Vec by a constant.
-func Scale(v Vec, s anyvec.Numeric) Vec {
+// Scale scales the components of a Res by a constant.
+func Scale(v Res, s anyvec.Numeric) Res {
 	newData := v.Output().Copy()
 	newData.Scale(s)
-	return &scaleVec{
+	return &scaleRes{
 		In:     v,
-		OutVec: newData,
+		OutRes: newData,
 		Scaler: s,
 	}
 }
 
-func (s *scaleVec) Output() anyvec.Vector {
-	return s.OutVec
+func (s *scaleRes) Output() anyvec.Vector {
+	return s.OutRes
 }
 
-func (s *scaleVec) Vars() VarSet {
+func (s *scaleRes) Vars() VarSet {
 	return s.In.Vars()
 }
 
-func (s *scaleVec) Propagate(u anyvec.Vector, g Grad) {
+func (s *scaleRes) Propagate(u anyvec.Vector, g Grad) {
 	u.Scale(s.Scaler)
 	s.In.Propagate(u, g)
 }
 
-type addVec struct {
-	In1    Vec
-	In2    Vec
+type addRes struct {
+	In1    Res
+	In2    Res
 	V      VarSet
-	OutVec anyvec.Vector
+	OutRes anyvec.Vector
 }
 
 // Add performs vector addition.
-func Add(v1, v2 Vec) Vec {
+func Add(v1, v2 Res) Res {
 	newData := v1.Output().Copy()
 	newData.Add(v2.Output())
-	return &addVec{
+	return &addRes{
 		In1:    v1,
 		In2:    v2,
 		V:      MergeVarSets(v1.Vars(), v2.Vars()),
-		OutVec: newData,
+		OutRes: newData,
 	}
 }
 
-func (a *addVec) Output() anyvec.Vector {
-	return a.OutVec
+func (a *addRes) Output() anyvec.Vector {
+	return a.OutRes
 }
 
-func (a *addVec) Vars() VarSet {
+func (a *addRes) Vars() VarSet {
 	return a.V
 }
 
-func (a *addVec) Propagate(u anyvec.Vector, g Grad) {
+func (a *addRes) Propagate(u anyvec.Vector, g Grad) {
 	int1 := g.Intersects(a.In1.Vars())
 	int2 := g.Intersects(a.In2.Vars())
 	if int1 && !int2 {
@@ -74,7 +74,7 @@ func (a *addVec) Propagate(u anyvec.Vector, g Grad) {
 
 // A Matrix is a matrix with a row-major backing array.
 type Matrix struct {
-	Data Vec
+	Data Res
 	Rows int
 	Cols int
 }
@@ -95,8 +95,8 @@ func (m *Matrix) anyvecZeroMatrix() *anyvec.Matrix {
 	}
 }
 
-type matMulVec struct {
-	OutVec anyvec.Vector
+type matMulRes struct {
+	OutRes anyvec.Vector
 	Deps   VarSet
 
 	Trans1 bool
@@ -117,17 +117,17 @@ func MatMul(trans1, trans2 bool, m1, m2 *Matrix) *Matrix {
 		outCols = m2.Rows
 	}
 	c := m1.Data.Output().Creator()
-	outVec := c.MakeVector(outRows * outCols)
+	outRes := c.MakeVector(outRows * outCols)
 
 	anyM1 := m1.anyvecMatrix()
 	anyM2 := m2.anyvecMatrix()
-	anyM3 := &anyvec.Matrix{Data: outVec, Rows: outRows, Cols: outCols}
+	anyM3 := &anyvec.Matrix{Data: outRes, Rows: outRows, Cols: outCols}
 
 	anyM3.Product(trans1, trans2, c.MakeNumeric(1), anyM1, anyM2, c.MakeNumeric(0))
 
 	return &Matrix{
-		Data: &matMulVec{
-			OutVec: anyM3.Data,
+		Data: &matMulRes{
+			OutRes: anyM3.Data,
 			Deps:   MergeVarSets(m1.Data.Vars(), m2.Data.Vars()),
 			Trans1: trans1,
 			Trans2: trans2,
@@ -139,16 +139,16 @@ func MatMul(trans1, trans2 bool, m1, m2 *Matrix) *Matrix {
 	}
 }
 
-func (m *matMulVec) Output() anyvec.Vector {
-	return m.OutVec
+func (m *matMulRes) Output() anyvec.Vector {
+	return m.OutRes
 }
 
-func (m *matMulVec) Vars() VarSet {
+func (m *matMulRes) Vars() VarSet {
 	return m.Deps
 }
 
-func (m *matMulVec) Propagate(u anyvec.Vector, g Grad) {
-	c := m.OutVec.Creator()
+func (m *matMulRes) Propagate(u anyvec.Vector, g Grad) {
+	c := m.OutRes.Creator()
 	one := c.MakeNumeric(1)
 	zero := c.MakeNumeric(0)
 
@@ -177,7 +177,7 @@ func (m *matMulVec) Propagate(u anyvec.Vector, g Grad) {
 	}
 }
 
-func (m *matMulVec) upstreamMat(u anyvec.Vector) *anyvec.Matrix {
+func (m *matMulRes) upstreamMat(u anyvec.Vector) *anyvec.Matrix {
 	outRows, outCols := m.M1.Rows, m.M2.Cols
 	if m.Trans1 {
 		outRows = m.M1.Cols
