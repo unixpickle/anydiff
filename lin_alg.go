@@ -72,6 +72,73 @@ func (a *addRes) Propagate(u anyvec.Vector, g Grad) {
 	}
 }
 
+type addRepeatedRes struct {
+	In     Res
+	Bias   Res
+	V      VarSet
+	OutVec anyvec.Vector
+}
+
+// AddRepeated is equivalent to repeating the biases
+// enough times to match the length of v and then adding
+// the repeated vector to v.
+//
+// The length of the biases must divide the length of v.
+func AddRepeated(v, biases Res) Res {
+	if v.Output().Len()%biases.Output().Len() != 0 {
+		panic("bias count must divide vector length")
+	}
+	sum := v.Output().Copy()
+	anyvec.AddRepeated(sum, biases.Output())
+	return &addRepeatedRes{
+		In:     v,
+		Bias:   biases,
+		V:      MergeVarSets(v.Vars(), biases.Vars()),
+		OutVec: sum,
+	}
+}
+
+func (a *addRepeatedRes) Output() anyvec.Vector {
+	return a.OutVec
+}
+
+func (a *addRepeatedRes) Vars() VarSet {
+	return a.V
+}
+
+func (a *addRepeatedRes) Propagate(u anyvec.Vector, g Grad) {
+	if g.Intersects(a.Bias.Vars()) {
+		// Sum up chunks in u of size biasLen.
+		inLen := a.In.Output().Len()
+		biasLen := a.Bias.Output().Len()
+		combinerVec := a.OutVec.Creator().MakeVector(inLen / biasLen)
+		combinerVec.AddScaler(a.OutVec.Creator().MakeNumeric(1))
+		uMat := &anyvec.Matrix{
+			Data: u,
+			Rows: combinerVec.Len(),
+			Cols: biasLen,
+		}
+		combinerMat := &anyvec.Matrix{
+			Data: combinerVec,
+			Rows: combinerVec.Len(),
+			Cols: 1,
+		}
+		outMat := &anyvec.Matrix{
+			Data: a.OutVec.Creator().MakeVector(biasLen),
+			Rows: biasLen,
+			Cols: 1,
+		}
+		outMat.Product(true, false, a.OutVec.Creator().MakeNumeric(1), uMat,
+			combinerMat, a.OutVec.Creator().MakeNumeric(0))
+
+		a.Bias.Propagate(outMat.Data, g)
+	}
+
+	if g.Intersects(a.In.Vars()) {
+		a.In.Propagate(u, g)
+	}
+}
+
 // A Matrix is a matrix with a row-major backing array.
 type Matrix struct {
 	Data Res
