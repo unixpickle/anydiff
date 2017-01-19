@@ -5,6 +5,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/unixpickle/anydiff"
 	"github.com/unixpickle/anyvec"
 	"github.com/unixpickle/anyvec/anyvec32"
 )
@@ -76,4 +77,10 @@ func setComponent(v anyvec.Vector, i int, val float64) {
 		panic(fmt.Sprintf("unsupported type: %T", data))
 	}
 	v.SetData(data)
+}
+
+func makeRandomVec(c anyvec.Creator, size int) *anydiff.Var {
+	v := c.MakeVector(size)
+	anyvec.Rand(v, anyvec.Normal, nil)
+	return anydiff.NewVar(v)
 }

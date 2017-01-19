@@ -190,9 +190,3 @@ func makeMatrix(c anyvec.Creator, d []float64, rows, cols int) *anydiff.Matrix {
 		Cols: cols,
 	}
 }
-
-func makeRandomVec(c anyvec.Creator, size int) *anydiff.Var {
-	v := c.MakeVector(size)
-	anyvec.Rand(v, anyvec.Normal, nil)
-	return anydiff.NewVar(v)
-}
