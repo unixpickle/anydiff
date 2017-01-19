@@ -23,6 +23,10 @@ type Vec interface {
 	// Propagate performs back-propagation through this
 	// Result and all of the non-constant results upon which
 	// it depends.
+	//
+	// Propagate may modify the upstream vector as it likes.
+	// Often times, the upstream vector can be used as
+	// scratch space for computations.
 	Propagate(upstream anyvec.Vector, grad Grad)
 }
 
@@ -51,5 +55,7 @@ type Seq interface {
 	// Propagate performs back-propagation through this Seq
 	// and all of the non-constant Vecs or Seqs upon which it
 	// depends.
+	//
+	// Propagate may modify the upstream vectors as it likes.
 	Propagate(upstream []*Batch, grad Grad)
 }

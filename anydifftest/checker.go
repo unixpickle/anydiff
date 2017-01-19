@@ -2,7 +2,6 @@ package anydifftest
 
 import (
 	"fmt"
-	"math"
 	"testing"
 
 	"github.com/unixpickle/anydiff"
@@ -55,8 +54,8 @@ func Check(t *testing.T, c Checker, prec float64) {
 		for i := 0; i < v.Vector.Len(); i++ {
 			approx := c.Approx(v, i)
 			for outIdx, grad := range jacobian {
-				actual := anyvec.Sum(grad[v].Slice(i, i+1))
-				expected := anyvec.Sum(approx.Slice(outIdx, outIdx+1))
+				actual := getComponent(grad[v], i)
+				expected := getComponent(approx, outIdx)
 				if !valuesClose(actual, expected, prec) {
 					t.Errorf("∂out[%d] / ∂var%d[%d] approximated to %v but got %v",
 						outIdx, varIdx, i, expected, actual)
@@ -66,30 +65,26 @@ func Check(t *testing.T, c Checker, prec float64) {
 	}
 }
 
-func valuesClose(v1, v2 interface{}, prec float64) bool {
-	a := valueTo64(v1)
-	b := valueTo64(v2)
-	if math.IsNaN(a) {
-		return math.IsNaN(b)
-	} else if math.IsInf(a, 1) {
-		return math.IsInf(b, 1)
-	} else if math.IsInf(a, -1) {
-		return math.IsInf(b, -1)
-	} else {
-		return math.Abs(a-b) < prec
+// CheckVars runs one sub-test per variable.
+// In each subtest, only one variable is checked.
+// This is useful for testing that back-propagation is not
+// over-aggressively avoiding constants.
+func CheckVars(t *testing.T, c Checker, prec float64) {
+	for i, v := range c.Vars() {
+		t.Run(fmt.Sprintf("Vars[%d]", i), func(t *testing.T) {
+			c := &checkerSubset{c, v}
+			Check(t, c, prec)
+		})
 	}
-
 }
 
-func valueTo64(v interface{}) float64 {
-	switch v := v.(type) {
-	case float32:
-		return float64(v)
-	case float64:
-		return v
-	default:
-		panic(fmt.Sprintf("unsupported numeric type: %T", v))
-	}
+type checkerSubset struct {
+	Checker
+	V *anydiff.Var
+}
+
+func (c *checkerSubset) Vars() []*anydiff.Var {
+	return []*anydiff.Var{c.V}
 }
 
 func outputCount(c Checker) int {
