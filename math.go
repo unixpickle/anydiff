@@ -67,32 +67,11 @@ func (l *logSoftmaxRes) Vars() VarSet {
 func (l *logSoftmaxRes) Propagate(u anyvec.Vector, g Grad) {
 	numBatch := u.Len() / l.ChunkSize
 
-	// For each batch, compute the negative sum of the
-	// upstream components.
-	oneVec := u.Creator().MakeVector(l.ChunkSize)
-	oneVec.AddScaler(u.Creator().MakeNumeric(1))
-	oneCol := &anyvec.Matrix{
-		Data: oneVec,
-		Rows: l.ChunkSize,
-		Cols: 1,
-	}
-	uMat := &anyvec.Matrix{
-		Data: u,
-		Rows: numBatch,
-		Cols: l.ChunkSize,
-	}
-	batchSums := &anyvec.Matrix{
-		Data: u.Creator().MakeVector(numBatch),
-		Rows: numBatch,
-		Cols: 1,
-	}
-	batchSums.Product(false, false, u.Creator().MakeNumeric(-1), uMat, oneCol,
-		u.Creator().MakeNumeric(0))
-
-	temp := l.OutVec.Copy()
-	anyvec.Exp(temp)
-	anyvec.ScaleChunks(temp, batchSums.Data)
-	u.Add(temp)
+	batchSums := anyvec.SumCols(u, numBatch)
+	probs := l.OutVec.Copy()
+	anyvec.Exp(probs)
+	anyvec.ScaleChunks(probs, batchSums)
+	u.Sub(probs)
 
 	l.In.Propagate(u, g)
 }

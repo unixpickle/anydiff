@@ -111,30 +111,8 @@ func (a *addRepeatedRes) Vars() VarSet {
 
 func (a *addRepeatedRes) Propagate(u anyvec.Vector, g Grad) {
 	if g.Intersects(a.Bias.Vars()) {
-		// Sum up chunks in u of size biasLen.
-		inLen := a.In.Output().Len()
-		biasLen := a.Bias.Output().Len()
-		combinerVec := a.OutVec.Creator().MakeVector(inLen / biasLen)
-		combinerVec.AddScaler(a.OutVec.Creator().MakeNumeric(1))
-		uMat := &anyvec.Matrix{
-			Data: u,
-			Rows: combinerVec.Len(),
-			Cols: biasLen,
-		}
-		combinerMat := &anyvec.Matrix{
-			Data: combinerVec,
-			Rows: combinerVec.Len(),
-			Cols: 1,
-		}
-		outMat := &anyvec.Matrix{
-			Data: a.OutVec.Creator().MakeVector(biasLen),
-			Rows: biasLen,
-			Cols: 1,
-		}
-		outMat.Product(true, false, a.OutVec.Creator().MakeNumeric(1), uMat,
-			combinerMat, a.OutVec.Creator().MakeNumeric(0))
-
-		a.Bias.Propagate(outMat.Data, g)
+		chunkSum := anyvec.SumRows(u, a.Bias.Output().Len())
+		a.Bias.Propagate(chunkSum, g)
 	}
 
 	if g.Intersects(a.In.Vars()) {
