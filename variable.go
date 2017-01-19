@@ -63,7 +63,7 @@ func (v *Var) Vars() VarSet {
 }
 
 // Propagate propagates a gradient through the Var.
-func (v *Var) Propagate(upstream anyvec.Vector, g Gradient) {
+func (v *Var) Propagate(upstream anyvec.Vector, g Grad) {
 	if vec, ok := g[v]; ok {
 		vec.Add(upstream)
 	}
@@ -93,5 +93,5 @@ func (c *Const) Vars() VarSet {
 }
 
 // Propagate does nothing, since c is a constant.
-func (c *Const) Propagate(upstream anyvec.Vector, g Gradient) {
+func (c *Const) Propagate(upstream anyvec.Vector, g Grad) {
 }

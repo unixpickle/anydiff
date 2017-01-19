@@ -11,7 +11,7 @@ import "github.com/unixpickle/anyvec"
 // In general, Vecs should be thought of as immutable and
 // thread-safe.
 // However, it is not safe to back-propagate through the
-// same Gradient in multiple Goroutines concurrently.
+// same Grad in multiple Goroutines concurrently.
 type Vec interface {
 	// Output returns the value of the vector.
 	Output() anyvec.Vector
@@ -23,7 +23,7 @@ type Vec interface {
 	// Propagate performs back-propagation through this
 	// Result and all of the non-constant results upon which
 	// it depends.
-	Propagate(upstream anyvec.Vector, grad Gradient)
+	Propagate(upstream anyvec.Vector, grad Grad)
 }
 
 // A Batch is a set of equally-sized vectors which are
@@ -51,5 +51,5 @@ type Seq interface {
 	// Propagate performs back-propagation through this Seq
 	// and all of the non-constant Vecs or Seqs upon which it
 	// depends.
-	Propagate(upstream []*Batch, grad Gradient)
+	Propagate(upstream []*Batch, grad Grad)
 }
