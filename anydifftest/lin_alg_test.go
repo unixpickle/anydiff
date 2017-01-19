@@ -66,6 +66,20 @@ func TestAddRepeated(t *testing.T) {
 	})
 }
 
+func TestMul(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v1 := makeRandomVec(c, 15)
+		v2 := makeRandomVec(c, 15)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.Mul(v1, v2)
+			},
+			V: []*anydiff.Var{v1, v2},
+		}
+		ch.FullCheck(t)
+	})
+}
+
 type matMulExpected struct {
 	Rows int
 	Cols int

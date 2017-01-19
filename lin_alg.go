@@ -41,6 +41,9 @@ type addRes struct {
 
 // Add performs vector addition.
 func Add(v1, v2 Res) Res {
+	if v1.Output().Len() != v2.Output().Len() {
+		panic("input sizes must match")
+	}
 	newData := v1.Output().Copy()
 	newData.Add(v2.Output())
 	return &addRes{
@@ -136,6 +139,54 @@ func (a *addRepeatedRes) Propagate(u anyvec.Vector, g Grad) {
 
 	if g.Intersects(a.In.Vars()) {
 		a.In.Propagate(u, g)
+	}
+}
+
+type mulRes struct {
+	In1    Res
+	In2    Res
+	V      VarSet
+	OutVec anyvec.Vector
+}
+
+// Mul performs component-wise multiplication.
+func Mul(v1, v2 Res) Res {
+	if v1.Output().Len() != v2.Output().Len() {
+		panic("input sizes must match")
+	}
+	out := v1.Output().Copy()
+	out.Mul(v2.Output())
+	return &mulRes{
+		In1:    v1,
+		In2:    v2,
+		V:      MergeVarSets(v1.Vars(), v2.Vars()),
+		OutVec: out,
+	}
+}
+
+func (m *mulRes) Output() anyvec.Vector {
+	return m.OutVec
+}
+
+func (m *mulRes) Vars() VarSet {
+	return m.V
+}
+
+func (m *mulRes) Propagate(u anyvec.Vector, g Grad) {
+	int1 := g.Intersects(m.In1.Vars())
+	int2 := g.Intersects(m.In2.Vars())
+	if int1 && !int2 {
+		u.Mul(m.In2.Output())
+		m.In1.Propagate(u, g)
+	} else if !int1 && int2 {
+		u.Mul(m.In1.Output())
+		m.In2.Propagate(u, g)
+	} else {
+		uc := u.Copy()
+		uc.Mul(m.In2.Output())
+		m.In1.Propagate(uc, g)
+		u.Mul(m.In1.Output())
+		m.In2.Propagate(u, g)
 	}
 }
 
