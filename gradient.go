@@ -1,16 +1,13 @@
 package anydiff
 
-import (
-	"github.com/unixpickle/anydiff"
-	"github.com/unixpickle/anyvec"
-)
+import "github.com/unixpickle/anyvec"
 
 // A Grad represents a gradient by mapping a set of
 // variables each to their respective gradients.
 type Grad map[*Var]anyvec.Vector
 
 // NewGrad creates a zero Grad with the given variables.
-func NewGrad(vars ...*anydiff.Var) Grad {
+func NewGrad(vars ...*Var) Grad {
 	res := Grad{}
 	for _, v := range vars {
 		o := v.Output()
