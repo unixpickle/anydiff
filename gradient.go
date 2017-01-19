@@ -4,7 +4,7 @@ import "github.com/unixpickle/anyvec"
 
 // A Gradient represents a gradient by mapping a set of
 // variables each to their respective gradients.
-type Gradient map[*Variable]anyvec.Vector
+type Gradient map[*Var]anyvec.Vector
 
 // Intersects returns true if the gradient contains any of
 // the variables in a VarSet.
