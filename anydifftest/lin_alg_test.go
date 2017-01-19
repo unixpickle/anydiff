@@ -24,6 +24,34 @@ var (
 	}
 )
 
+func TestAdd(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v1 := makeRandomVec(c, 15)
+		v2 := makeRandomVec(c, 15)
+		ch := &VecChecker{
+			F: func() anydiff.Vec {
+				return anydiff.Add(v1, v2)
+			},
+			V: []*anydiff.Var{v1, v2},
+		}
+		ch.FullCheck(t)
+	})
+}
+
+func TestScale(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v := makeRandomVec(c, 15)
+		scaler := c.MakeNumeric(-1.5)
+		ch := &VecChecker{
+			F: func() anydiff.Vec {
+				return anydiff.Scale(v, scaler)
+			},
+			V: []*anydiff.Var{v},
+		}
+		ch.FullCheck(t)
+	})
+}
+
 type matMulExpected struct {
 	Rows int
 	Cols int
@@ -133,4 +161,10 @@ func makeMatrix(c anyvec.Creator, d []float64, rows, cols int) *anydiff.Matrix {
 		Rows: rows,
 		Cols: cols,
 	}
+}
+
+func makeRandomVec(c anyvec.Creator, size int) *anydiff.Var {
+	v := c.MakeVector(size)
+	anyvec.Rand(v, anyvec.Normal, nil)
+	return anydiff.NewVar(v)
 }

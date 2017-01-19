@@ -2,6 +2,76 @@ package anydiff
 
 import "github.com/unixpickle/anyvec"
 
+type scaleVec struct {
+	In     Vec
+	OutVec anyvec.Vector
+	Scaler anyvec.Numeric
+}
+
+// Scale scales the components of a Vec by a constant.
+func Scale(v Vec, s anyvec.Numeric) Vec {
+	newData := v.Output().Copy()
+	newData.Scale(s)
+	return &scaleVec{
+		In:     v,
+		OutVec: newData,
+		Scaler: s,
+	}
+}
+
+func (s *scaleVec) Output() anyvec.Vector {
+	return s.OutVec
+}
+
+func (s *scaleVec) Vars() VarSet {
+	return s.In.Vars()
+}
+
+func (s *scaleVec) Propagate(u anyvec.Vector, g Grad) {
+	u.Scale(s.Scaler)
+	s.In.Propagate(u, g)
+}
+
+type addVec struct {
+	In1    Vec
+	In2    Vec
+	V      VarSet
+	OutVec anyvec.Vector
+}
+
+// Add performs vector addition.
+func Add(v1, v2 Vec) Vec {
+	newData := v1.Output().Copy()
+	newData.Add(v2.Output())
+	return &addVec{
+		In1:    v1,
+		In2:    v2,
+		V:      MergeVarSets(v1.Vars(), v2.Vars()),
+		OutVec: newData,
+	}
+}
+
+func (a *addVec) Output() anyvec.Vector {
+	return a.OutVec
+}
+
+func (a *addVec) Vars() VarSet {
+	return a.V
+}
+
+func (a *addVec) Propagate(u anyvec.Vector, g Grad) {
+	int1 := g.Intersects(a.In1.Vars())
+	int2 := g.Intersects(a.In2.Vars())
+	if int1 && !int2 {
+		a.In1.Propagate(u, g)
+	} else if !int1 && int2 {
+		a.In2.Propagate(u, g)
+	} else {
+		a.In1.Propagate(u.Copy(), g)
+		a.In2.Propagate(u, g)
+	}
+}
+
 // A Matrix is a matrix with a row-major backing array.
 type Matrix struct {
 	Data Vec
