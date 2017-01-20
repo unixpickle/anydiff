@@ -7,22 +7,34 @@ import (
 	"github.com/unixpickle/anyvec"
 )
 
-// A Batch is a set of equally-sized vectors which are
-// packed one-after-another in a larger vector.
+// A Batch represents the output of a sequence batch at a
+// single timestep.
+//
+// The present vectors are packed one after another in a
+// single backing vector.
+// The absent vectors do not take up any space in the
+// backing vector.
 type Batch struct {
-	// Vector contains the packed vectors.
-	Vector anyvec.Vector
+	// Packed contains the packed vectors.
+	Packed anyvec.Vector
 
-	// Num specifies the number of vectors.
-	// It must evenly divide Vector.Len().
-	Num int
+	// Present contains one element per sequence in the batch
+	// indicating if the corresponding sequence is present.
+	// A sequence is called present if it has not terminated
+	// before the timestep represented by the Batch.
+	//
+	// The number of true elements in Present indicates the
+	// number of vectors packed in Packed.
+	Present []bool
 }
 
 // A Seq represents a batch of differentiable sequences.
-// It is a batched, sequence analog for Vec.
 type Seq interface {
-	// Output returns the outputs of the sequence at each
-	// timestep.
+	// Output returns the outputs of the batch.
+	//
+	// It is guaranteed that, if a sequence is not present at
+	// timestep t, it will not be present at any timestep
+	// after t.
 	Output() []*Batch
 
 	// Vars returns the variables upon which the output
