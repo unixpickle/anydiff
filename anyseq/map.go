@@ -13,6 +13,9 @@ type mapResult struct {
 // Map maps a batched function over each timestep of the
 // sequence in a differentiable manner.
 //
+// It is guaranteed that f will be called for each
+// timestep in order.
+//
 // For each output, f is passed an anydiff.Res containing
 // the packed batch contents, as well as the batch size.
 // The result of f must be divisible by n, since said
