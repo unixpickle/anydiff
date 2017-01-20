@@ -80,3 +80,10 @@ func (l *logSoftmaxRes) Propagate(u anyvec.Vector, g Grad) {
 
 	l.In.Propagate(u, g)
 }
+
+// Square squares the vector components.
+func Square(v Res) Res {
+	return Pool(v, func(v Res) Res {
+		return Mul(v, v)
+	})
+}

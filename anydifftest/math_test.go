@@ -32,3 +32,16 @@ func TestLogSoftmax(t *testing.T) {
 		ch.FullCheck(t)
 	})
 }
+
+func TestSquare(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v := makeRandomVec(c, 18)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.Square(v)
+			},
+			V: []*anydiff.Var{v},
+		}
+		ch.FullCheck(t)
+	})
+}
