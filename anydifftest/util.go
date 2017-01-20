@@ -24,7 +24,8 @@ func valuesClose(a, b, prec float64) bool {
 	} else if math.IsInf(a, -1) {
 		return math.IsInf(b, -1)
 	} else {
-		return math.Abs(a-b) < prec
+		mag := math.Max(1, math.Max(math.Abs(a), math.Abs(b)))
+		return math.Abs(a-b) < prec*mag
 	}
 }
 
