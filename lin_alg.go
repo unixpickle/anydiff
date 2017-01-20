@@ -315,3 +315,31 @@ func (s *sumRowsRes) Propagate(u anyvec.Vector, g Grad) {
 	anyvec.AddRepeated(downstream, u)
 	s.In.Data.Propagate(downstream, g)
 }
+
+type sumColsRes struct {
+	In  *Matrix
+	Out anyvec.Vector
+}
+
+// SumCols sums the columns of a matrix.
+func SumCols(m *Matrix) Res {
+	out := anyvec.SumCols(m.Data.Output(), m.Rows)
+	return &sumColsRes{
+		In:  m,
+		Out: out,
+	}
+}
+
+func (s *sumColsRes) Output() anyvec.Vector {
+	return s.Out
+}
+
+func (s *sumColsRes) Vars() VarSet {
+	return s.In.Data.Vars()
+}
+
+func (s *sumColsRes) Propagate(u anyvec.Vector, g Grad) {
+	downstream := s.Out.Creator().MakeVector(s.In.Data.Output().Len())
+	anyvec.AddChunks(downstream, u)
+	s.In.Data.Propagate(downstream, g)
+}

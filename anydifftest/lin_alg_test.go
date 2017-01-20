@@ -197,6 +197,19 @@ func TestSumRows(t *testing.T) {
 	})
 }
 
+func TestSumCols(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		m3x4 := makeMatrix(c, testMat3x4, 3, 4)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.SumCols(m3x4)
+			},
+			V: []*anydiff.Var{m3x4.Data.(*anydiff.Var)},
+		}
+		ch.FullCheck(t)
+	})
+}
+
 func makeMatrix(c anyvec.Creator, d []float64, rows, cols int) *anydiff.Matrix {
 	return &anydiff.Matrix{
 		Data: anydiff.NewVar(c.MakeVectorData(c.MakeNumericList(d))),
