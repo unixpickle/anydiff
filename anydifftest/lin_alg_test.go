@@ -175,7 +175,8 @@ func TestMatMul(t *testing.T) {
 			t.Run(fmt.Sprintf("Case%d", i), func(t *testing.T) {
 				ch := &ResChecker{
 					F: f,
-					V: []*anydiff.Var{m2x3.Data.(*anydiff.Var), m3x4.Data.(*anydiff.Var)},
+					V: []*anydiff.Var{m2x3.Data.(*anydiff.Var), m3x4.Data.(*anydiff.Var),
+						m2x4.Data.(*anydiff.Var)},
 				}
 				ch.FullCheck(t)
 			})
