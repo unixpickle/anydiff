@@ -20,7 +20,7 @@ type SeqChecker struct {
 
 	// Delta is the finite difference to use when computing
 	// approximate partials.
-	// If it is 0, the error precision is used as the delta.
+	// If it is 0, a default is used.
 	Delta float64
 
 	// Prec is the error precision.
