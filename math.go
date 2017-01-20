@@ -43,7 +43,12 @@ type logSoftmaxRes struct {
 // LogSoftmax computes the log of the softmax function for
 // each chunk in a packed list of chunks.
 // The chunk size must divide the vector length.
+// If chunkSize is 0, it will be treated like the full
+// length of v.
 func LogSoftmax(v Res, chunkSize int) Res {
+	if chunkSize == 0 {
+		chunkSize = v.Output().Len()
+	}
 	if v.Output().Len()%chunkSize != 0 {
 		panic("chunk size must divide vector size")
 	}
