@@ -33,8 +33,6 @@ type ResChecker struct {
 	// If Prec is 0, then a default for the numeric type is
 	// used.
 	Prec float64
-
-	numericSample anyvec.Numeric
 }
 
 // FullCheck runs several variations of gradient checking.
