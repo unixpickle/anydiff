@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/unixpickle/anydiff"
+	"github.com/unixpickle/anydiff/anydifftest"
 	"github.com/unixpickle/anydiff/anyseq"
 	"github.com/unixpickle/anyvec"
 )
@@ -61,7 +62,7 @@ func TestMap(t *testing.T) {
 				Rows: 6,
 				Cols: 1,
 			}
-			ch := &SeqChecker{
+			ch := &anydifftest.SeqChecker{
 				F: func() anyseq.Seq {
 					return anyseq.Map(inSeq, func(v anydiff.Res, n int) anydiff.Res {
 						v = anydiff.Tanh(v)
