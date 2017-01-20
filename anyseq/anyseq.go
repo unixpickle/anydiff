@@ -28,6 +28,17 @@ type Batch struct {
 	Present []bool
 }
 
+// NumPresent counts the true values in Present.
+func (b *Batch) NumPresent() int {
+	var res int
+	for _, x := range b.Present {
+		if x {
+			res++
+		}
+	}
+	return res
+}
+
 // A Seq represents a batch of differentiable sequences.
 type Seq interface {
 	// Output returns the outputs of the batch.
