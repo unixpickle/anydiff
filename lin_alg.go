@@ -287,3 +287,31 @@ func (m *matMulRes) upstreamMat(u anyvec.Vector) *anyvec.Matrix {
 		Data: u,
 	}
 }
+
+type sumRowsRes struct {
+	In  *Matrix
+	Out anyvec.Vector
+}
+
+// SumRows sums the rows of a matrix.
+func SumRows(m *Matrix) Res {
+	out := anyvec.SumRows(m.Data.Output(), m.Cols)
+	return &sumRowsRes{
+		In:  m,
+		Out: out,
+	}
+}
+
+func (s *sumRowsRes) Output() anyvec.Vector {
+	return s.Out
+}
+
+func (s *sumRowsRes) Vars() VarSet {
+	return s.In.Data.Vars()
+}
+
+func (s *sumRowsRes) Propagate(u anyvec.Vector, g Grad) {
+	downstream := s.Out.Creator().MakeVector(s.In.Data.Output().Len())
+	anyvec.AddRepeated(downstream, u)
+	s.In.Data.Propagate(downstream, g)
+}
