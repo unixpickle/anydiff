@@ -75,51 +75,6 @@ func (a *addRes) Propagate(u anyvec.Vector, g Grad) {
 	}
 }
 
-type addRepeatedRes struct {
-	In     Res
-	Bias   Res
-	V      VarSet
-	OutVec anyvec.Vector
-}
-
-// AddRepeated is equivalent to repeating the biases
-// enough times to match the length of v and then adding
-// the repeated vector to v.
-//
-// The length of the biases must divide the length of v.
-func AddRepeated(v, biases Res) Res {
-	if v.Output().Len()%biases.Output().Len() != 0 {
-		panic("bias count must divide vector length")
-	}
-	sum := v.Output().Copy()
-	anyvec.AddRepeated(sum, biases.Output())
-	return &addRepeatedRes{
-		In:     v,
-		Bias:   biases,
-		V:      MergeVarSets(v.Vars(), biases.Vars()),
-		OutVec: sum,
-	}
-}
-
-func (a *addRepeatedRes) Output() anyvec.Vector {
-	return a.OutVec
-}
-
-func (a *addRepeatedRes) Vars() VarSet {
-	return a.V
-}
-
-func (a *addRepeatedRes) Propagate(u anyvec.Vector, g Grad) {
-	if g.Intersects(a.Bias.Vars()) {
-		chunkSum := anyvec.SumRows(u, a.Bias.Output().Len())
-		a.Bias.Propagate(chunkSum, g)
-	}
-
-	if g.Intersects(a.In.Vars()) {
-		a.In.Propagate(u, g)
-	}
-}
-
 type mulRes struct {
 	In1    Res
 	In2    Res
