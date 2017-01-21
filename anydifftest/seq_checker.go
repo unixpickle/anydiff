@@ -71,6 +71,9 @@ func (v *SeqChecker) Approx(variable *anydiff.Var, idx int) anyvec.Vector {
 // component using automatic differentiation.
 func (v *SeqChecker) Exact(comp int, g anydiff.Grad) {
 	out := v.F()
+	if !g.Intersects(out.Vars()) {
+		return
+	}
 	upstream := oneHotBatches(out.Output(), comp)
 	out.Propagate(upstream, g)
 }

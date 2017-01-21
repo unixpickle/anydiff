@@ -75,6 +75,9 @@ func (v *ResChecker) Approx(variable *anydiff.Var, idx int) anyvec.Vector {
 // component using automatic differentiation.
 func (v *ResChecker) Exact(comp int, g anydiff.Grad) {
 	out := v.F()
+	if !g.Intersects(out.Vars()) {
+		return
+	}
 	oneHot := make([]float64, out.Output().Len())
 	oneHot[comp] = 1
 	nums := out.Output().Creator().MakeNumericList(oneHot)
