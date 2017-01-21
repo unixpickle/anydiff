@@ -34,6 +34,45 @@ func (t *tanhRes) Propagate(u anyvec.Vector, g Grad) {
 	t.In.Propagate(u, g)
 }
 
+type sigmoidRes struct {
+	In     Res
+	OutVec anyvec.Vector
+}
+
+// Sigmoid computes the logistic sigmoid of the input.
+//
+// The sigmoid is defined as:
+//
+//     f(x) = 1 / (1 + exp(-x))
+//
+func Sigmoid(in Res) Res {
+	exp := in.Output().Copy()
+	anyvec.Exp(exp)
+	plusOne := exp.Copy()
+	plusOne.AddScaler(plusOne.Creator().MakeNumeric(1))
+	exp.Div(plusOne)
+	return &sigmoidRes{
+		In:     in,
+		OutVec: exp,
+	}
+}
+
+func (s *sigmoidRes) Output() anyvec.Vector {
+	return s.OutVec
+}
+
+func (s *sigmoidRes) Vars() VarSet {
+	return s.In.Vars()
+}
+
+func (s *sigmoidRes) Propagate(u anyvec.Vector, g Grad) {
+	u.Mul(s.OutVec)
+	comp := s.OutVec.Copy()
+	anyvec.Complement(comp)
+	u.Mul(comp)
+	s.In.Propagate(u, g)
+}
+
 type logSoftmaxRes struct {
 	In        Res
 	ChunkSize int
