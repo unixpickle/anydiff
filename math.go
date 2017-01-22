@@ -46,14 +46,15 @@ type sigmoidRes struct {
 //     f(x) = 1 / (1 + exp(-x))
 //
 func Sigmoid(in Res) Res {
-	exp := in.Output().Copy()
-	anyvec.Exp(exp)
-	plusOne := exp.Copy()
-	plusOne.AddScaler(plusOne.Creator().MakeNumeric(1))
-	exp.Div(plusOne)
+	res := in.Output().Copy()
+	half := res.Creator().MakeNumeric(0.5)
+	res.Scale(half)
+	anyvec.Tanh(res)
+	res.AddScaler(res.Creator().MakeNumeric(1))
+	res.Scale(half)
 	return &sigmoidRes{
 		In:     in,
-		OutVec: exp,
+		OutVec: res,
 	}
 }
 
