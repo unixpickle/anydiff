@@ -1,6 +1,9 @@
 package anyseq
 
-import "github.com/unixpickle/anydiff"
+import (
+	"github.com/unixpickle/anydiff"
+	"github.com/unixpickle/anyvec"
+)
 
 // A ResBatch is like a Batch, but it contains a
 // differentiable result.
@@ -49,6 +52,32 @@ type constSeq struct {
 // list of batches.
 func ConstSeq(b []*Batch) Seq {
 	return &constSeq{Out: b}
+}
+
+// ConstSeqList creates a constant sequence from a list
+// of unbatched sequences.
+func ConstSeqList(seqs [][]anyvec.Vector) Seq {
+	batches := []*Batch{}
+	i := 0
+	for {
+		present := make([]bool, len(seqs))
+		var joinMe []anyvec.Vector
+		for j, x := range seqs {
+			if i >= len(x) {
+				continue
+			}
+			present[j] = true
+			joinMe = append(joinMe, x[i])
+		}
+		if len(joinMe) == 0 {
+			break
+		}
+		batches = append(batches, &Batch{
+			Packed:  joinMe[0].Creator().Concat(joinMe...),
+			Present: present,
+		})
+	}
+	return ConstSeq(batches)
 }
 
 func (c *constSeq) Output() []*Batch {
