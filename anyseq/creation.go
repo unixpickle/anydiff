@@ -76,6 +76,7 @@ func ConstSeqList(seqs [][]anyvec.Vector) Seq {
 			Packed:  joinMe[0].Creator().Concat(joinMe...),
 			Present: present,
 		})
+		i++
 	}
 	return ConstSeq(batches)
 }
