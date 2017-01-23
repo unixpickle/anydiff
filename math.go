@@ -47,11 +47,7 @@ type sigmoidRes struct {
 //
 func Sigmoid(in Res) Res {
 	res := in.Output().Copy()
-	half := res.Creator().MakeNumeric(0.5)
-	res.Scale(half)
-	anyvec.Tanh(res)
-	res.AddScaler(res.Creator().MakeNumeric(1))
-	res.Scale(half)
+	anyvec.Sigmoid(res)
 	return &sigmoidRes{
 		In:     in,
 		OutVec: res,
@@ -67,8 +63,8 @@ func (s *sigmoidRes) Vars() VarSet {
 }
 
 func (s *sigmoidRes) Propagate(u anyvec.Vector, g Grad) {
-	u.Mul(s.OutVec)
 	comp := s.OutVec.Copy()
+	u.Mul(comp)
 	anyvec.Complement(comp)
 	u.Mul(comp)
 	s.In.Propagate(u, g)
