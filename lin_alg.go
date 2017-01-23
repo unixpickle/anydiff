@@ -138,12 +138,18 @@ func (m *Matrix) anyvecMatrix() *anyvec.Matrix {
 	}
 }
 
-func (m *Matrix) anyvecZeroMatrix() *anyvec.Matrix {
-	return &anyvec.Matrix{
-		Data: m.Data.Output().Creator().MakeVector(m.Rows * m.Cols),
-		Rows: m.Rows,
-		Cols: m.Cols,
+func (m *Matrix) anyvecUpstreamMatrix(g Grad) (mat *anyvec.Matrix, isVar bool) {
+	mat = &anyvec.Matrix{Rows: m.Rows, Cols: m.Cols}
+	if v, ok := m.Data.(*Var); ok {
+		if g[v] == nil {
+			panic("no gradient for variable")
+		}
+		mat.Data = g[v]
+		isVar = true
+	} else {
+		mat.Data = m.Data.Output().Creator().MakeVector(m.Rows * m.Cols)
 	}
+	return
 }
 
 type matMulRes struct {
@@ -205,26 +211,36 @@ func (m *matMulRes) Propagate(u anyvec.Vector, g Grad) {
 
 	uMat := m.upstreamMat(u)
 
-	// TODO: avoid downstream allocs for *Var inputs.
-
 	if g.Intersects(m.M1.Data.Vars()) {
-		mDown := m.M1.anyvecZeroMatrix()
-		if m.Trans1 {
-			mDown.Product(m.Trans2, true, one, m.M2.anyvecMatrix(), uMat, zero)
-		} else {
-			mDown.Product(false, !m.Trans2, one, uMat, m.M2.anyvecMatrix(), zero)
+		mDown, isVar := m.M1.anyvecUpstreamMatrix(g)
+		scaler := zero
+		if isVar {
+			scaler = one
 		}
-		m.M1.Data.Propagate(mDown.Data, g)
+		if m.Trans1 {
+			mDown.Product(m.Trans2, true, one, m.M2.anyvecMatrix(), uMat, scaler)
+		} else {
+			mDown.Product(false, !m.Trans2, one, uMat, m.M2.anyvecMatrix(), scaler)
+		}
+		if !isVar {
+			m.M1.Data.Propagate(mDown.Data, g)
+		}
 	}
 
 	if g.Intersects(m.M2.Data.Vars()) {
-		mDown := m.M2.anyvecZeroMatrix()
-		if m.Trans2 {
-			mDown.Product(true, m.Trans1, one, uMat, m.M1.anyvecMatrix(), zero)
-		} else {
-			mDown.Product(!m.Trans1, false, one, m.M1.anyvecMatrix(), uMat, zero)
+		mDown, isVar := m.M2.anyvecUpstreamMatrix(g)
+		scaler := zero
+		if isVar {
+			scaler = one
 		}
-		m.M2.Data.Propagate(mDown.Data, g)
+		if m.Trans2 {
+			mDown.Product(true, m.Trans1, one, uMat, m.M1.anyvecMatrix(), scaler)
+		} else {
+			mDown.Product(!m.Trans1, false, one, m.M1.anyvecMatrix(), uMat, scaler)
+		}
+		if !isVar {
+			m.M2.Data.Propagate(mDown.Data, g)
+		}
 	}
 }
 

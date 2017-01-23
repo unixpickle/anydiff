@@ -143,29 +143,46 @@ func TestMatMul(t *testing.T) {
 		m2x3 := makeMatrix(c, testMat2x3, 2, 3)
 		m3x4 := makeMatrix(c, testMat3x4, 3, 4)
 		m2x4 := makeMatrix(c, testMat2x4, 2, 4)
-		cases := []func() anydiff.Res{
-			func() anydiff.Res {
-				return anydiff.MatMul(false, false, m2x3, m3x4).Data
+		condAccum := func(m *anydiff.Matrix, accum bool) *anydiff.Matrix {
+			if accum {
+				d := accumulate(m.Data)
+				return &anydiff.Matrix{Data: d, Rows: m.Rows, Cols: m.Cols}
+			} else {
+				return &anydiff.Matrix{Data: m.Data, Rows: m.Rows, Cols: m.Cols}
+			}
+		}
+		cases := []func(bool) anydiff.Res{
+			func(acc bool) anydiff.Res {
+				return anydiff.MatMul(false, false, condAccum(m2x3, acc),
+					condAccum(m3x4, acc)).Data
 			},
-			func() anydiff.Res {
-				return anydiff.MatMul(false, true, m3x4, m2x4).Data
+			func(acc bool) anydiff.Res {
+				return anydiff.MatMul(false, true, condAccum(m3x4, acc),
+					condAccum(m2x4, acc)).Data
 			},
-			func() anydiff.Res {
-				return anydiff.MatMul(true, false, m2x3, m2x4).Data
+			func(acc bool) anydiff.Res {
+				return anydiff.MatMul(true, false, condAccum(m2x3, acc),
+					condAccum(m2x4, acc)).Data
 			},
-			func() anydiff.Res {
-				return anydiff.MatMul(true, true, m3x4, m2x3).Data
+			func(acc bool) anydiff.Res {
+				return anydiff.MatMul(true, true, condAccum(m3x4, acc),
+					condAccum(m2x3, acc)).Data
 			},
 		}
-		for i, f := range cases {
-			t.Run(fmt.Sprintf("Case%d", i), func(t *testing.T) {
-				ch := &ResChecker{
-					F: f,
-					V: []*anydiff.Var{m2x3.Data.(*anydiff.Var), m3x4.Data.(*anydiff.Var),
-						m2x4.Data.(*anydiff.Var)},
-				}
-				ch.FullCheck(t)
-			})
+		vars := []*anydiff.Var{m2x3.Data.(*anydiff.Var), m3x4.Data.(*anydiff.Var),
+			m2x4.Data.(*anydiff.Var)}
+		for _, accum := range []bool{false, true} {
+			for i, f := range cases {
+				t.Run(fmt.Sprintf("Case%v-%d", accum, i), func(t *testing.T) {
+					ch := &ResChecker{
+						F: func() anydiff.Res {
+							return f(accum)
+						},
+						V: vars,
+					}
+					ch.FullCheck(t)
+				})
+			}
 		}
 	})
 }
