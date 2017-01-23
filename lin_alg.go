@@ -314,3 +314,12 @@ func (s *sumColsRes) Propagate(u anyvec.Vector, g Grad) {
 	anyvec.AddChunks(downstream, u)
 	s.In.Data.Propagate(downstream, g)
 }
+
+// Sum computes the complete sum of all the elements.
+func Sum(r Res) Res {
+	return SumCols(&Matrix{
+		Data: r,
+		Rows: 1,
+		Cols: r.Output().Len(),
+	})
+}
