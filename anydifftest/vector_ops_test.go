@@ -48,3 +48,17 @@ func TestMul(t *testing.T) {
 		ch.FullCheck(t)
 	})
 }
+
+func TestDiv(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v1 := makeDivisionFriendlyVec(c, 15)
+		v2 := makeDivisionFriendlyVec(c, 15)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.Div(v1, v2)
+			},
+			V: []*anydiff.Var{v1, v2},
+		}
+		ch.FullCheck(t)
+	})
+}

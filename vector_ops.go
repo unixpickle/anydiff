@@ -123,6 +123,58 @@ func (m *mulRes) Propagate(u anyvec.Vector, g Grad) {
 	}
 }
 
+type divRes struct {
+	In1    Res
+	In2    Res
+	V      VarSet
+	OutVec anyvec.Vector
+}
+
+// Div performs component-wise division to find num/denom.
+func Div(num, denom Res) Res {
+	res := num.Output().Copy()
+	res.Div(denom.Output())
+	return &divRes{
+		In1:    num,
+		In2:    denom,
+		V:      MergeVarSets(num.Vars(), denom.Vars()),
+		OutVec: res,
+	}
+}
+
+func (d *divRes) Output() anyvec.Vector {
+	return d.OutVec
+}
+
+func (d *divRes) Vars() VarSet {
+	return d.V
+}
+
+func (d *divRes) Propagate(u anyvec.Vector, g Grad) {
+	int1 := g.Intersects(d.In1.Vars())
+	int2 := g.Intersects(d.In2.Vars())
+	if int1 && !int2 {
+		u.Div(d.In2.Output())
+		d.In1.Propagate(u, g)
+	} else if !int1 && int2 {
+		u.Mul(d.In1.Output())
+		u.Div(d.In2.Output())
+		u.Div(d.In2.Output())
+		u.Scale(u.Creator().MakeNumeric(-1))
+		d.In2.Propagate(u, g)
+	} else {
+		uCpy := u.Copy()
+		uCpy.Div(d.In2.Output())
+		d.In1.Propagate(uCpy, g)
+
+		u.Mul(d.In1.Output())
+		u.Div(d.In2.Output())
+		u.Div(d.In2.Output())
+		u.Scale(u.Creator().MakeNumeric(-1))
+		d.In2.Propagate(u, g)
+	}
+}
+
 // Sum computes the complete sum of all the elements.
 func Sum(r Res) Res {
 	return SumCols(&Matrix{

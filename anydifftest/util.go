@@ -85,3 +85,10 @@ func makeRandomVec(c anyvec.Creator, size int) *anydiff.Var {
 	anyvec.Rand(v, anyvec.Normal, nil)
 	return anydiff.NewVar(v)
 }
+
+func makeDivisionFriendlyVec(c anyvec.Creator, size int) *anydiff.Var {
+	v := c.MakeVector(size)
+	anyvec.Rand(v, anyvec.Uniform, nil)
+	v.AddScaler(c.MakeNumeric(0.25))
+	return anydiff.NewVar(v)
+}
