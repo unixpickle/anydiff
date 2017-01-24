@@ -94,3 +94,65 @@ func (s *scaleRepeatedRes) Propagate(u anyvec.Vector, g Grad) {
 		s.In.Propagate(u, g)
 	}
 }
+
+type scaleAddRepeatedRes struct {
+	In      Res
+	Scalers Res
+	Biases  Res
+	OutVec  anyvec.Vector
+	V       VarSet
+}
+
+// ScaleAddRepeated is equivalent to composing AddRepeated
+// and ScaleRepeated.
+//
+// Mathematically, res1 and res2 are equivalent in:
+//
+//     res1 := AddRepeated(ScaleRepeated(v, scalers), biases)
+//     res2 := ScaleAddRepeated(v, scalers, biases)
+//
+// However, ScaleAddRepeated may be more efficient than
+// manually composing the two methods.
+//
+// Scalers and biases needn't be of the same length, but
+// both should have a length that divides the length of v.
+func ScaleAddRepeated(v, scalers, biases Res) Res {
+	out := v.Output().Copy()
+	anyvec.ScaleRepeated(out, scalers.Output())
+	anyvec.AddRepeated(out, biases.Output())
+	vars := MergeVarSets(v.Vars(), scalers.Vars(), biases.Vars())
+	return &scaleAddRepeatedRes{
+		In:      v,
+		Scalers: scalers,
+		Biases:  biases,
+		OutVec:  out,
+		V:       vars,
+	}
+}
+
+func (s *scaleAddRepeatedRes) Output() anyvec.Vector {
+	return s.OutVec
+}
+
+func (s *scaleAddRepeatedRes) Vars() VarSet {
+	return s.V
+}
+
+func (s *scaleAddRepeatedRes) Propagate(u anyvec.Vector, g Grad) {
+	if g.Intersects(s.Biases.Vars()) {
+		chunkSum := anyvec.SumRows(u, s.Biases.Output().Len())
+		s.Biases.Propagate(chunkSum, g)
+	}
+
+	if g.Intersects(s.Scalers.Vars()) {
+		uCopy := u.Copy()
+		uCopy.Mul(s.In.Output())
+		chunkSum := anyvec.SumRows(uCopy, s.Scalers.Output().Len())
+		s.Scalers.Propagate(chunkSum, g)
+	}
+
+	if g.Intersects(s.In.Vars()) {
+		anyvec.ScaleRepeated(u, s.Scalers.Output())
+		s.In.Propagate(u, g)
+	}
+}

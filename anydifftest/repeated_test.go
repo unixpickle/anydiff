@@ -25,6 +25,21 @@ func TestScaleRepeated(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		v := makeRandomVec(c, 18)
 		scalers := makeRandomVec(c, 6)
+		biases := makeRandomVec(c, 9)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.ScaleAddRepeated(v, scalers, biases)
+			},
+			V: []*anydiff.Var{v, scalers},
+		}
+		ch.FullCheck(t)
+	})
+}
+
+func TestScaleAddRepeated(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v := makeRandomVec(c, 18)
+		scalers := makeRandomVec(c, 6)
 		ch := &ResChecker{
 			F: func() anydiff.Res {
 				return anydiff.ScaleRepeated(v, scalers)
