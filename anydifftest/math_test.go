@@ -94,6 +94,28 @@ func TestPowProp(t *testing.T) {
 	}
 }
 
+func TestClipPos(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v := anydiff.NewVar(c.MakeVector(15))
+
+		// Avoid numerical issues for finite differences.
+		anyvec.Rand(v.Vector, anyvec.Uniform, nil)
+		v.Vector.AddScaler(c.MakeNumeric(0.1))
+		mask := c.MakeVector(15)
+		anyvec.Rand(mask, anyvec.Bernoulli, nil)
+		mask.AddScaler(c.MakeNumeric(-0.5))
+		v.Vector.Mul(mask)
+
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.ClipPos(v)
+			},
+			V: []*anydiff.Var{v},
+		}
+		ch.FullCheck(t)
+	})
+}
+
 func testMathFunction(t *testing.T, f func(v anydiff.Res) anydiff.Res) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		v := makeRandomVec(c, 18)

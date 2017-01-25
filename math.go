@@ -161,3 +161,34 @@ func (p *powRes) Propagate(u anyvec.Vector, g Grad) {
 
 	p.In.Propagate(u, g)
 }
+
+type clipPosRes struct {
+	In     Res
+	OutVec anyvec.Vector
+}
+
+// ClipPos clips the values to be non-negative.
+// Thus, any negative entries of in are 0 in the result.
+func ClipPos(in Res) Res {
+	out := in.Output().Copy()
+	anyvec.ClipPos(out)
+	return &clipPosRes{
+		In:     in,
+		OutVec: out,
+	}
+}
+
+func (c *clipPosRes) Output() anyvec.Vector {
+	return c.OutVec
+}
+
+func (c *clipPosRes) Vars() VarSet {
+	return c.In.Vars()
+}
+
+func (c *clipPosRes) Propagate(u anyvec.Vector, g Grad) {
+	mask := c.In.Output().Copy()
+	anyvec.GreaterThan(mask, mask.Creator().MakeNumeric(0))
+	u.Mul(mask)
+	c.In.Propagate(u, g)
+}
