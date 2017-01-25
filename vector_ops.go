@@ -32,6 +32,33 @@ func (s *scaleRes) Propagate(u anyvec.Vector, g Grad) {
 	s.In.Propagate(u, g)
 }
 
+type addScalerRes struct {
+	In     Res
+	OutVec anyvec.Vector
+}
+
+// AddScaler adds a scaler to every vector component.
+func AddScaler(v Res, s anyvec.Numeric) Res {
+	newData := v.Output().Copy()
+	newData.AddScaler(s)
+	return &addScalerRes{
+		In:     v,
+		OutVec: newData,
+	}
+}
+
+func (a *addScalerRes) Output() anyvec.Vector {
+	return a.OutVec
+}
+
+func (a *addScalerRes) Vars() VarSet {
+	return a.In.Vars()
+}
+
+func (a *addScalerRes) Propagate(u anyvec.Vector, g Grad) {
+	a.In.Propagate(u, g)
+}
+
 type addRes struct {
 	In1    Res
 	In2    Res
