@@ -75,6 +75,51 @@ func (a *addRes) Propagate(u anyvec.Vector, g Grad) {
 	}
 }
 
+type subRes struct {
+	In1    Res
+	In2    Res
+	V      VarSet
+	OutRes anyvec.Vector
+}
+
+// Sub subtracts the components of v2 from those of v1.
+func Sub(v1, v2 Res) Res {
+	if v1.Output().Len() != v2.Output().Len() {
+		panic("input sizes must match")
+	}
+	newData := v1.Output().Copy()
+	newData.Sub(v2.Output())
+	return &subRes{
+		In1:    v1,
+		In2:    v2,
+		V:      MergeVarSets(v1.Vars(), v2.Vars()),
+		OutRes: newData,
+	}
+}
+
+func (a *subRes) Output() anyvec.Vector {
+	return a.OutRes
+}
+
+func (a *subRes) Vars() VarSet {
+	return a.V
+}
+
+func (a *subRes) Propagate(u anyvec.Vector, g Grad) {
+	int1 := g.Intersects(a.In1.Vars())
+	int2 := g.Intersects(a.In2.Vars())
+	if int1 && !int2 {
+		a.In1.Propagate(u, g)
+	} else if !int1 && int2 {
+		u.Scale(u.Creator().MakeNumeric(-1))
+		a.In2.Propagate(u, g)
+	} else {
+		a.In1.Propagate(u.Copy(), g)
+		u.Scale(u.Creator().MakeNumeric(-1))
+		a.In2.Propagate(u, g)
+	}
+}
+
 type mulRes struct {
 	In1    Res
 	In2    Res
@@ -132,6 +177,9 @@ type divRes struct {
 
 // Div performs component-wise division to find num/denom.
 func Div(num, denom Res) Res {
+	if num.Output().Len() != denom.Output().Len() {
+		panic("input sizes must match")
+	}
 	res := num.Output().Copy()
 	res.Div(denom.Output())
 	return &divRes{

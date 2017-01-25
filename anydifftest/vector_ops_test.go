@@ -21,6 +21,20 @@ func TestAdd(t *testing.T) {
 	})
 }
 
+func TestSub(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v1 := makeRandomVec(c, 15)
+		v2 := makeRandomVec(c, 15)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.Sub(v1, v2)
+			},
+			V: []*anydiff.Var{v1, v2},
+		}
+		ch.FullCheck(t)
+	})
+}
+
 func TestScale(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		v := makeRandomVec(c, 15)
