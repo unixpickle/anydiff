@@ -1,6 +1,7 @@
 package anydifftest
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -45,6 +46,52 @@ func TestLogSoftmax(t *testing.T) {
 
 func TestSquare(t *testing.T) {
 	testMathFunction(t, anydiff.Square)
+}
+
+func TestPowOut(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v := anydiff.NewVar(c.MakeVector(15))
+		v.Vector.SetData(c.MakeNumericList([]float64{1, 2, 3}))
+		actual := getComponents(anydiff.Pow(v, c.MakeNumeric(1.3)).Output())
+		expected := []float64{1, 2.4622888267, 4.1711675109}
+
+		for i, x := range expected {
+			a := actual[i]
+			if math.IsNaN(a) || math.Abs(x-a) > prec {
+				t.Errorf("index %d: expected %f but got %f", i, x, a)
+			}
+		}
+	})
+}
+
+func TestPowProp(t *testing.T) {
+	for _, power := range []float64{1, 2, -2, 0.5} {
+		t.Run(fmt.Sprintf("Pow%f", power), func(t *testing.T) {
+			runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+				v := anydiff.NewVar(c.MakeVector(15))
+
+				// Avoid numerical issues for finite differences.
+				anyvec.Rand(v.Vector, anyvec.Uniform, nil)
+				if power != 0.5 {
+					if power < 0 {
+						v.Vector.AddScaler(c.MakeNumeric(0.25))
+					} else {
+						v.Vector.Scale(c.MakeNumeric(2))
+						v.Vector.AddScaler(c.MakeNumeric(-1))
+					}
+				}
+
+				powNum := c.MakeNumeric(power)
+				ch := &ResChecker{
+					F: func() anydiff.Res {
+						return anydiff.Pow(v, powNum)
+					},
+					V: []*anydiff.Var{v},
+				}
+				ch.FullCheck(t)
+			})
+		})
+	}
 }
 
 func testMathFunction(t *testing.T, f func(v anydiff.Res) anydiff.Res) {

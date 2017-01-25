@@ -123,3 +123,43 @@ func Square(v Res) Res {
 		return Mul(v, v)
 	})
 }
+
+type powRes struct {
+	In     Res
+	OutVec anyvec.Vector
+	Power  anyvec.Numeric
+}
+
+// Pow raises each component of the vector to the given
+// scaler power.
+func Pow(v Res, s anyvec.Numeric) Res {
+	out := v.Output().Copy()
+	anyvec.Pow(out, s)
+	return &powRes{
+		In:     v,
+		OutVec: out,
+		Power:  s,
+	}
+}
+
+func (p *powRes) Output() anyvec.Vector {
+	return p.OutVec
+}
+
+func (p *powRes) Vars() VarSet {
+	return p.In.Vars()
+}
+
+func (p *powRes) Propagate(u anyvec.Vector, g Grad) {
+	temp := u.Creator().MakeVector(1)
+	temp.AddScaler(p.Power)
+	temp.AddScaler(temp.Creator().MakeNumeric(-1))
+	powerMinusOne := anyvec.Sum(temp)
+
+	exped := p.In.Output().Copy()
+	anyvec.Pow(exped, powerMinusOne)
+	u.Mul(exped)
+	u.Scale(p.Power)
+
+	p.In.Propagate(u, g)
+}
