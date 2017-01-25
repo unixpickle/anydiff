@@ -119,9 +119,7 @@ func (l *logSoftmaxRes) Propagate(u anyvec.Vector, g Grad) {
 
 // Square squares the vector components.
 func Square(v Res) Res {
-	return Pool(v, func(v Res) Res {
-		return Mul(v, v)
-	})
+	return Pow(v, v.Output().Creator().MakeNumeric(2))
 }
 
 type powRes struct {
