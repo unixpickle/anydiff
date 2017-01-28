@@ -192,3 +192,34 @@ func (c *clipPosRes) Propagate(u anyvec.Vector, g Grad) {
 	u.Mul(mask)
 	c.In.Propagate(u, g)
 }
+
+type sinRes struct {
+	In     Res
+	OutVec anyvec.Vector
+}
+
+// Sin takes the component-wise sine of the vector, in
+// radians.
+func Sin(in Res) Res {
+	out := in.Output().Copy()
+	anyvec.Sin(out)
+	return &sinRes{
+		In:     in,
+		OutVec: out,
+	}
+}
+
+func (s *sinRes) Output() anyvec.Vector {
+	return s.OutVec
+}
+
+func (s *sinRes) Vars() VarSet {
+	return s.In.Vars()
+}
+
+func (s *sinRes) Propagate(u anyvec.Vector, g Grad) {
+	upScale := s.In.Output().Copy()
+	anyvec.Cos(upScale)
+	u.Mul(upScale)
+	s.In.Propagate(u, g)
+}

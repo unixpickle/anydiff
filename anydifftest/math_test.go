@@ -14,6 +14,10 @@ func TestTanh(t *testing.T) {
 	testMathFunction(t, anydiff.Tanh)
 }
 
+func TestSin(t *testing.T) {
+	testMathFunction(t, anydiff.Sin)
+}
+
 func TestSigmoidOut(t *testing.T) {
 	inVec := anyvec32.MakeVectorData([]float32{1000, -1000, 2, -2, 0})
 	inRes := anydiff.NewConst(inVec)
