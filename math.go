@@ -223,3 +223,46 @@ func (s *sinRes) Propagate(u anyvec.Vector, g Grad) {
 	u.Mul(upScale)
 	s.In.Propagate(u, g)
 }
+
+type logSigmoidRes struct {
+	OutVec anyvec.Vector
+	In     Res
+}
+
+// LogSigmoid computes the log of the sigmoid of the
+// input.
+// This may be more numerically stable than first
+// computing the sigmoid and then computing the log.
+func LogSigmoid(in Res) Res {
+	c := in.Output().Creator()
+	idxMap := make([]int, in.Output().Len())
+	for i := range idxMap {
+		idxMap[i] = i * 2
+	}
+	mapper := c.MakeMapper(len(idxMap)*2, idxMap)
+	logSumMe := c.MakeVector(len(idxMap) * 2)
+	mapper.MapTranspose(in.Output(), logSumMe)
+	logSumMe.Scale(c.MakeNumeric(-1))
+	sum := anyvec.AddLogs(logSumMe, 2)
+	sum.Scale(c.MakeNumeric(-1))
+	return &logSigmoidRes{
+		OutVec: sum,
+		In:     in,
+	}
+}
+
+func (l *logSigmoidRes) Output() anyvec.Vector {
+	return l.OutVec
+}
+
+func (l *logSigmoidRes) Vars() VarSet {
+	return l.In.Vars()
+}
+
+func (l *logSigmoidRes) Propagate(u anyvec.Vector, g Grad) {
+	downstream := l.In.Output().Copy()
+	downstream.Scale(downstream.Creator().MakeNumeric(-1))
+	anyvec.Sigmoid(downstream)
+	u.Mul(downstream)
+	l.In.Propagate(u, g)
+}

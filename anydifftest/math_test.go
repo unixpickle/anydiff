@@ -35,6 +35,23 @@ func TestSigmoidProp(t *testing.T) {
 	testMathFunction(t, anydiff.Sigmoid)
 }
 
+func TestLogSigmoidOut(t *testing.T) {
+	inVec := anyvec32.MakeVectorData([]float32{1000, -1000, 2, -2, 0})
+	inRes := anydiff.NewConst(inVec)
+	actual := anydiff.LogSigmoid(inRes).Output().Data().([]float32)
+	expected := []float32{0, -1000, -0.126928011, -2.1269280112, -0.6931471806}
+	for i, x := range expected {
+		a := actual[i]
+		if math.IsNaN(float64(a)) || math.Abs(float64(x-a)) > 1e-3 {
+			t.Errorf("expected %f but got %f", x, a)
+		}
+	}
+}
+
+func TestLogSigmoidProp(t *testing.T) {
+	testMathFunction(t, anydiff.LogSigmoid)
+}
+
 func TestLogSoftmax(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		v := makeRandomVec(c, 18)
