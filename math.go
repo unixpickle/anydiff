@@ -266,3 +266,28 @@ func (l *logSigmoidRes) Propagate(u anyvec.Vector, g Grad) {
 	u.Mul(downstream)
 	l.In.Propagate(u, g)
 }
+
+type complementRes struct {
+	In     Res
+	OutVec anyvec.Vector
+}
+
+// Complement computes (1-x) for every component x.
+func Complement(in Res) Res {
+	compIn := in.Output().Copy()
+	anyvec.Complement(compIn)
+	return &complementRes{In: in, OutVec: compIn}
+}
+
+func (c *complementRes) Output() anyvec.Vector {
+	return c.OutVec
+}
+
+func (c *complementRes) Vars() VarSet {
+	return c.In.Vars()
+}
+
+func (c *complementRes) Propagate(u anyvec.Vector, g Grad) {
+	u.Scale(u.Creator().MakeNumeric(-1))
+	c.In.Propagate(u, g)
+}
