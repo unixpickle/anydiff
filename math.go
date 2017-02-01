@@ -224,6 +224,38 @@ func (s *sinRes) Propagate(u anyvec.Vector, g Grad) {
 	s.In.Propagate(u, g)
 }
 
+type cosRes struct {
+	In     Res
+	OutVec anyvec.Vector
+}
+
+// Cos takes the component-wise cosine of the vector, in
+// radians.
+func Cos(in Res) Res {
+	out := in.Output().Copy()
+	anyvec.Cos(out)
+	return &cosRes{
+		In:     in,
+		OutVec: out,
+	}
+}
+
+func (s *cosRes) Output() anyvec.Vector {
+	return s.OutVec
+}
+
+func (s *cosRes) Vars() VarSet {
+	return s.In.Vars()
+}
+
+func (s *cosRes) Propagate(u anyvec.Vector, g Grad) {
+	upScale := s.In.Output().Copy()
+	anyvec.Sin(upScale)
+	u.Mul(upScale)
+	u.Scale(u.Creator().MakeNumeric(-1))
+	s.In.Propagate(u, g)
+}
+
 type logSigmoidRes struct {
 	OutVec anyvec.Vector
 	In     Res
