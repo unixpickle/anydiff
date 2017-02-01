@@ -258,3 +258,8 @@ func Sum(r Res) Res {
 		Cols: r.Output().Len(),
 	})
 }
+
+// Dot computes the dot product of two vectors.
+func Dot(r1, r2 Res) Res {
+	return Sum(Mul(r1, r2))
+}
