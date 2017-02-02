@@ -86,6 +86,17 @@ func makeRandomVec(c anyvec.Creator, size int) *anydiff.Var {
 	return anydiff.NewVar(v)
 }
 
+func makeAbsFriendlyVec(c anyvec.Creator, size int) *anydiff.Var {
+	v := anydiff.NewVar(c.MakeVector(size))
+	anyvec.Rand(v.Vector, anyvec.Uniform, nil)
+	v.Vector.AddScaler(c.MakeNumeric(0.1))
+	mask := c.MakeVector(size)
+	anyvec.Rand(mask, anyvec.Bernoulli, nil)
+	mask.AddScaler(c.MakeNumeric(-0.5))
+	v.Vector.Mul(mask)
+	return v
+}
+
 func makeDivisionFriendlyVec(c anyvec.Creator, size int) *anydiff.Var {
 	v := c.MakeVector(size)
 	anyvec.Rand(v, anyvec.Uniform, nil)

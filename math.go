@@ -323,3 +323,12 @@ func (c *complementRes) Propagate(u anyvec.Vector, g Grad) {
 	u.Scale(u.Creator().MakeNumeric(-1))
 	c.In.Propagate(u, g)
 }
+
+// Abs computes the component-wise absolute value.
+func Abs(in Res) Res {
+	sign := in.Output().Copy()
+	anyvec.GreaterThan(sign, sign.Creator().MakeNumeric(0))
+	sign.Scale(sign.Creator().MakeNumeric(2))
+	sign.AddScaler(sign.Creator().MakeNumeric(-1))
+	return Mul(in, NewConst(sign))
+}

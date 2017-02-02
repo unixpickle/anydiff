@@ -119,19 +119,38 @@ func TestPowProp(t *testing.T) {
 
 func TestClipPos(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
-		v := anydiff.NewVar(c.MakeVector(15))
-
-		// Avoid numerical issues for finite differences.
-		anyvec.Rand(v.Vector, anyvec.Uniform, nil)
-		v.Vector.AddScaler(c.MakeNumeric(0.1))
-		mask := c.MakeVector(15)
-		anyvec.Rand(mask, anyvec.Bernoulli, nil)
-		mask.AddScaler(c.MakeNumeric(-0.5))
-		v.Vector.Mul(mask)
-
+		v := makeAbsFriendlyVec(c, 15)
 		ch := &ResChecker{
 			F: func() anydiff.Res {
 				return anydiff.ClipPos(v)
+			},
+			V: []*anydiff.Var{v},
+		}
+		ch.FullCheck(t)
+	})
+}
+
+func TestAbsOut(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v := c.MakeVectorData(c.MakeNumericList([]float64{1, -2, 3, -0.5}))
+		actual := getComponents(anydiff.Abs(anydiff.NewConst(v)).Output())
+		expected := []float64{1, 2, 3, 0.5}
+		for i, x := range expected {
+			a := actual[i]
+			if math.IsNaN(a) || math.Abs(a-x) > prec {
+				t.Errorf("expected %v but got %v", expected, actual)
+				break
+			}
+		}
+	})
+}
+
+func TestAbsProp(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v := makeAbsFriendlyVec(c, 15)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.Abs(v)
 			},
 			V: []*anydiff.Var{v},
 		}
