@@ -256,6 +256,31 @@ func (s *cosRes) Propagate(u anyvec.Vector, g Grad) {
 	s.In.Propagate(u, g)
 }
 
+type expRes struct {
+	OutVec anyvec.Vector
+	In     Res
+}
+
+// Exp exponentiates the vector components.
+func Exp(in Res) Res {
+	expd := in.Output().Copy()
+	anyvec.Exp(expd)
+	return &expRes{OutVec: expd, In: in}
+}
+
+func (e *expRes) Output() anyvec.Vector {
+	return e.OutVec
+}
+
+func (e *expRes) Vars() VarSet {
+	return e.In.Vars()
+}
+
+func (e *expRes) Propagate(u anyvec.Vector, g Grad) {
+	u.Mul(e.OutVec)
+	e.In.Propagate(u, g)
+}
+
 type logSigmoidRes struct {
 	OutVec anyvec.Vector
 	In     Res
