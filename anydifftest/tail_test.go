@@ -48,6 +48,7 @@ func TestTailOutput(t *testing.T) {
 
 func TestTail(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		// Intentionally used a batch with an empty sequence.
 		batches := []*anyseq.ResBatch{
 			{
 				Packed:  makeRandomVec(c, 18),

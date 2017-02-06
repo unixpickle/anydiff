@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/unixpickle/anydiff"
+	"github.com/unixpickle/anydiff/anyseq"
 	"github.com/unixpickle/anyvec"
 	"github.com/unixpickle/anyvec/anyvec32"
 )
@@ -102,4 +103,40 @@ func makeDivisionFriendlyVec(c anyvec.Creator, size int) *anydiff.Var {
 	anyvec.Rand(v, anyvec.Uniform, nil)
 	v.AddScaler(c.MakeNumeric(0.25))
 	return anydiff.NewVar(v)
+}
+
+func makeBasicTestSeqs(c anyvec.Creator) (anyseq.Seq, []*anydiff.Var) {
+	batches := []*anyseq.ResBatch{
+		{
+			Packed:  makeRandomVec(c, 24),
+			Present: []bool{true, true, true, true},
+		},
+		{
+			Packed:  makeRandomVec(c, 18),
+			Present: []bool{true, true, true, false},
+		},
+		{
+			Packed:  makeRandomVec(c, 12),
+			Present: []bool{true, false, true, false},
+		},
+		{
+			Packed:  makeRandomVec(c, 12),
+			Present: []bool{true, false, true, false},
+		},
+		{
+			Packed:  makeRandomVec(c, 6),
+			Present: []bool{false, false, true, false},
+		},
+		{
+			Packed:  makeRandomVec(c, 6),
+			Present: []bool{false, false, true, false},
+		},
+	}
+	var varList []*anydiff.Var
+	for _, x := range batches {
+		for v := range x.Packed.Vars() {
+			varList = append(varList, v)
+		}
+	}
+	return anyseq.ResSeq(batches), varList
 }
