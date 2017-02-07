@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/unixpickle/anydiff/anyseq"
+	"github.com/unixpickle/anyvec"
 	"github.com/unixpickle/anyvec/anyvec32"
 )
 
@@ -62,4 +63,17 @@ func TestExpandBatch(t *testing.T) {
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("expected %v but got %v", expected, actual)
 	}
+}
+
+func TestReduce(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		inSeq, varList := makeBasicTestSeqs(c)
+		ch := &SeqChecker{
+			F: func() anyseq.Seq {
+				return anyseq.Reduce(inSeq, []bool{true, false, true, false})
+			},
+			V: varList,
+		}
+		ch.FullCheck(t)
+	})
 }
