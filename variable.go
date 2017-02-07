@@ -6,6 +6,15 @@ import "github.com/unixpickle/anyvec"
 // A *Var is in the set if it has an entry in the map.
 type VarSet map[*Var]struct{}
 
+// NewVarSet creates a VarSet with the given variables.
+func NewVarSet(vs ...*Var) VarSet {
+	res := VarSet{}
+	for _, v := range vs {
+		res.Add(v)
+	}
+	return res
+}
+
 // MergeVarSets creates a VarSet by merging the other
 // VarSets.
 func MergeVarSets(vs ...VarSet) VarSet {
