@@ -39,3 +39,18 @@ func TestSeqPool(t *testing.T) {
 		ch.FullCheck(t)
 	})
 }
+
+func TestSeqPoolToVec(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		inSeq, varList := makeBasicTestSeqs(c)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anyseq.PoolToVec(inSeq, func(s anyseq.Seq) anydiff.Res {
+					return anyseq.Sum(s)
+				})
+			},
+			V: varList,
+		}
+		ch.FullCheck(t)
+	})
+}
