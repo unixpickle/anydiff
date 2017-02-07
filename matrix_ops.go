@@ -193,3 +193,51 @@ func (s *sumColsRes) Propagate(u anyvec.Vector, g Grad) {
 	anyvec.AddChunks(downstream, u)
 	s.In.Data.Propagate(downstream, g)
 }
+
+type scaleRowsRes struct {
+	In      *Matrix
+	Scalers Res
+	Out     anyvec.Vector
+	V       VarSet
+}
+
+// ScaleRows scales each row of the matrix by a
+// corresponding scaler.
+func ScaleRows(m *Matrix, scalers Res) *Matrix {
+	if m.Rows != scalers.Output().Len() {
+		panic("scaler count must match row count")
+	}
+	outVec := m.Data.Output().Copy()
+	anyvec.ScaleChunks(outVec, scalers.Output())
+	return &Matrix{
+		Data: &scaleRowsRes{
+			In:      m,
+			Scalers: scalers,
+			Out:     outVec,
+			V:       MergeVarSets(m.Data.Vars(), scalers.Vars()),
+		},
+		Rows: m.Rows,
+		Cols: m.Cols,
+	}
+}
+
+func (s *scaleRowsRes) Output() anyvec.Vector {
+	return s.Out
+}
+
+func (s *scaleRowsRes) Vars() VarSet {
+	return s.V
+}
+
+func (s *scaleRowsRes) Propagate(u anyvec.Vector, g Grad) {
+	if g.Intersects(s.Scalers.Vars()) {
+		m := u.Copy()
+		m.Mul(s.In.Data.Output())
+		sum := anyvec.SumCols(m, s.Scalers.Output().Len())
+		s.Scalers.Propagate(sum, g)
+	}
+	if g.Intersects(s.In.Data.Vars()) {
+		anyvec.ScaleChunks(u, s.Scalers.Output())
+		s.In.Data.Propagate(u, g)
+	}
+}

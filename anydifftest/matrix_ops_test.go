@@ -171,6 +171,38 @@ func TestSumCols(t *testing.T) {
 	})
 }
 
+func TestScaleRowsOut(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		m3x4 := makeMatrix(c, testMat3x4, 3, 4)
+		scalers := anydiff.NewVar(c.MakeVectorData(c.MakeNumericList([]float64{
+			2, -3.5, 1.5,
+		})))
+		scaled := getComponents(anydiff.ScaleRows(m3x4, scalers).Data.Output())
+		expected := []float64{
+			0.7125156821328008, 1.5157235964903444, -0.3826236996528368, 3.6904266319483057,
+			3.0851091132544637, -3.3609194643252938, 0.0458185048253356, -0.1127736506599714,
+			0.4863635876082264, -1.8461093391837804, -0.2338000386485222, 0.7239048071355615,
+		}
+		if !vectorsClose(scaled, expected, prec) {
+			t.Errorf("expected %v but got %v", expected, scaled)
+		}
+	})
+}
+
+func TestScaleRowsProp(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		m3x4 := makeMatrix(c, testMat3x4, 3, 4)
+		scalers := makeRandomVec(c, 3)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.ScaleRows(m3x4, scalers).Data
+			},
+			V: []*anydiff.Var{m3x4.Data.(*anydiff.Var), scalers},
+		}
+		ch.FullCheck(t)
+	})
+}
+
 func makeMatrix(c anyvec.Creator, d []float64, rows, cols int) *anydiff.Matrix {
 	return &anydiff.Matrix{
 		Data: anydiff.NewVar(c.MakeVectorData(c.MakeNumericList(d))),
