@@ -90,6 +90,10 @@ type reduceRes struct {
 //
 // Unlike ReduceBatch, there is no restriction on which
 // elements of present may be true.
+//
+// Removed sequences are kept in the Seq to preserve
+// sequence indices within the batch.
+// To remove these empty sequences, use Prune().
 func Reduce(s Seq, present []bool) Seq {
 	in := s.Output()
 	res := &reduceRes{In: s, Out: make([]*Batch, len(in))}
@@ -118,4 +122,45 @@ func (r *reduceRes) Propagate(u []*Batch, grad anydiff.Grad) {
 		newU[i] = ExpandBatch(x, inOut[i].Present)
 	}
 	r.In.Propagate(newU, grad)
+}
+
+type pruneRes struct {
+	In  Seq
+	Out []*Batch
+}
+
+// Prune removes all empty sequences from the batch.
+func Prune(s Seq) Seq {
+	sOut := s.Output()
+	if len(sOut) == 0 {
+		return s
+	}
+	out := make([]*Batch, len(sOut))
+	for i, x := range sOut {
+		var newPres []bool
+		for j, keep := range sOut[0].Present {
+			if keep {
+				newPres = append(newPres, x.Present[j])
+			}
+		}
+		out[i] = &Batch{Packed: x.Packed, Present: newPres}
+	}
+	return &pruneRes{In: s, Out: out}
+}
+
+func (p *pruneRes) Output() []*Batch {
+	return p.Out
+}
+
+func (p *pruneRes) Vars() anydiff.VarSet {
+	return p.In.Vars()
+}
+
+func (p *pruneRes) Propagate(u []*Batch, g anydiff.Grad) {
+	matchingUp := make([]*Batch, len(u))
+	in := p.In.Output()
+	for i, x := range u {
+		matchingUp[i] = &Batch{Packed: x.Packed, Present: in[i].Present}
+	}
+	p.In.Propagate(matchingUp, g)
 }
