@@ -5,7 +5,7 @@ import (
 	"github.com/unixpickle/anyvec"
 )
 
-type sumResult struct {
+type sumRes struct {
 	In     Seq
 	OutVec anyvec.Vector
 }
@@ -33,21 +33,21 @@ func Sum(s Seq) anydiff.Res {
 	if sum == nil {
 		panic("cannot sum empty sequence")
 	}
-	return &sumResult{
+	return &sumRes{
 		In:     s,
 		OutVec: sum,
 	}
 }
 
-func (s *sumResult) Output() anyvec.Vector {
+func (s *sumRes) Output() anyvec.Vector {
 	return s.OutVec
 }
 
-func (s *sumResult) Vars() anydiff.VarSet {
+func (s *sumRes) Vars() anydiff.VarSet {
 	return s.In.Vars()
 }
 
-func (s *sumResult) Propagate(u anyvec.Vector, g anydiff.Grad) {
+func (s *sumRes) Propagate(u anyvec.Vector, g anydiff.Grad) {
 	upstream := make([]*Batch, len(s.In.Output()))
 	for i, x := range s.In.Output() {
 		upstream[i] = &Batch{
@@ -57,4 +57,52 @@ func (s *sumResult) Propagate(u anyvec.Vector, g anydiff.Grad) {
 		anyvec.AddRepeated(upstream[i].Packed, u)
 	}
 	s.In.Propagate(upstream, g)
+}
+
+type sumEachRes struct {
+	In     Seq
+	OutVec anyvec.Vector
+}
+
+// SumEach sums the outputs of each sequence, producing a
+// packed vector of sums (one per sequence).
+// Empty sequences are ignored.
+//
+// There must be at least one non-empty sequence.
+// All timesteps must have the same output size.
+func SumEach(s Seq) anydiff.Res {
+	out0 := s.Output()[0]
+	sum := out0.Packed.Copy()
+	for _, x := range s.Output()[1:] {
+		if x.NumPresent() == out0.NumPresent() {
+			sum.Add(x.Packed)
+		} else {
+			expBatch := ExpandBatch(x, out0.Present)
+			sum.Add(expBatch.Packed)
+		}
+	}
+	return &sumEachRes{
+		In:     s,
+		OutVec: sum,
+	}
+}
+
+func (s *sumEachRes) Output() anyvec.Vector {
+	return s.OutVec
+}
+
+func (s *sumEachRes) Vars() anydiff.VarSet {
+	return s.In.Vars()
+}
+
+func (s *sumEachRes) Propagate(u anyvec.Vector, g anydiff.Grad) {
+	uBatch := &Batch{
+		Packed:  u,
+		Present: s.In.Output()[0].Present,
+	}
+	downstream := make([]*Batch, len(s.In.Output()))
+	for i, x := range s.In.Output() {
+		downstream[i] = ReduceBatch(uBatch, x.Present)
+	}
+	s.In.Propagate(downstream, g)
 }
