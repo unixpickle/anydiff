@@ -104,7 +104,7 @@ func TestReduceOut(t *testing.T) {
 			{},
 			{},
 		})
-		if !seqsClose(actual, expected, prec) {
+		if !SeqsClose(actual, expected, prec) {
 			t.Errorf("expected %v but got %v", expected.Output(), actual.Output())
 		}
 	})

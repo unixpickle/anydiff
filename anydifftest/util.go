@@ -12,6 +12,24 @@ import (
 	"github.com/unixpickle/anyvec/anyvec32"
 )
 
+// SeqsClose returns true if the two sequences are
+// numerically equivalent up to the given precision.
+func SeqsClose(a, b anyseq.Seq, prec float64) bool {
+	if len(a.Output()) != len(b.Output()) {
+		return false
+	}
+	for i, x := range a.Output() {
+		y := b.Output()[i]
+		if !vectorsClose(getComponents(x.Packed), getComponents(y.Packed), prec) {
+			return false
+		}
+		if !reflect.DeepEqual(x.Present, y.Present) {
+			return false
+		}
+	}
+	return true
+}
+
 func runWithCreators(t *testing.T, f func(t *testing.T, c anyvec.Creator, prec float64)) {
 	t.Run("float32", func(t *testing.T) {
 		f(t, anyvec32.DefaultCreator{}, defaultPrec32)
@@ -37,22 +55,6 @@ func vectorsClose(a, b []float64, prec float64) bool {
 	}
 	for i, aVal := range a {
 		if !valuesClose(aVal, b[i], prec) {
-			return false
-		}
-	}
-	return true
-}
-
-func seqsClose(a, b anyseq.Seq, prec float64) bool {
-	if len(a.Output()) != len(b.Output()) {
-		return false
-	}
-	for i, x := range a.Output() {
-		y := b.Output()[i]
-		if !vectorsClose(getComponents(x.Packed), getComponents(y.Packed), prec) {
-			return false
-		}
-		if !reflect.DeepEqual(x.Present, y.Present) {
 			return false
 		}
 	}

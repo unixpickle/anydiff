@@ -54,7 +54,7 @@ func TestReverseOut(t *testing.T) {
 				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
 			},
 		})
-		if !seqsClose(actual, expected, prec) {
+		if !SeqsClose(actual, expected, prec) {
 			t.Errorf("expected %v but got %v", actual.Output(), expected.Output())
 		}
 	})
