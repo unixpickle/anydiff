@@ -40,6 +40,9 @@ func (r *resSeq) Vars() anydiff.VarSet {
 
 func (r *resSeq) Propagate(u []*Batch, g anydiff.Grad) {
 	for i, x := range r.In {
+		if u[i].NumPresent() != r.Out[i].NumPresent() {
+			panic("invalid present count")
+		}
 		x.Packed.Propagate(u[i].Packed, g)
 	}
 }

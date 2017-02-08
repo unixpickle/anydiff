@@ -128,7 +128,7 @@ func (r *reduceRes) Propagate(u []*Batch, grad anydiff.Grad) {
 	for i := len(u); i < len(inOut); i++ {
 		newU[i] = &Batch{
 			Packed:  inOut[i].Packed.Creator().MakeVector(inOut[i].Packed.Len()),
-			Present: make([]bool, len(inOut[i].Present)),
+			Present: inOut[i].Present,
 		}
 	}
 	r.In.Propagate(newU, grad)
