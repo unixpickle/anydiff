@@ -103,6 +103,10 @@ func Reduce(s Seq, present []bool) Seq {
 			p[i] = b && x.Present[i]
 		}
 		res.Out[i] = ReduceBatch(x, p)
+		if res.Out[i].NumPresent() == 0 {
+			res.Out = res.Out[:i]
+			break
+		}
 	}
 	return res
 }
@@ -116,10 +120,16 @@ func (r *reduceRes) Vars() anydiff.VarSet {
 }
 
 func (r *reduceRes) Propagate(u []*Batch, grad anydiff.Grad) {
-	newU := make([]*Batch, len(u))
 	inOut := r.In.Output()
+	newU := make([]*Batch, len(inOut))
 	for i, x := range u {
 		newU[i] = ExpandBatch(x, inOut[i].Present)
+	}
+	for i := len(u); i < len(inOut); i++ {
+		newU[i] = &Batch{
+			Packed:  inOut[i].Packed.Creator().MakeVector(inOut[i].Packed.Len()),
+			Present: make([]bool, len(inOut[i].Present)),
+		}
 	}
 	r.In.Propagate(newU, grad)
 }

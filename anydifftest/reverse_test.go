@@ -1,7 +1,6 @@
 package anydifftest
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/unixpickle/anydiff/anyseq"
@@ -55,20 +54,8 @@ func TestReverseOut(t *testing.T) {
 				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
 			},
 		})
-		if len(actual.Output()) != len(expected.Output()) {
-			t.Fatalf("expected length %d but got %d", len(expected.Output()),
-				len(actual.Output()))
-		}
-		for i, x := range expected.Output() {
-			a := actual.Output()[i]
-			if !vectorsClose(getComponents(a.Packed), getComponents(x.Packed), prec) {
-				t.Errorf("step %d: expected %v but got %v", i, x.Packed.Data(),
-					a.Packed.Data())
-			}
-			if !reflect.DeepEqual(a.Present, x.Present) {
-				t.Errorf("step %d: expected present %v but got %v", i, x.Present,
-					a.Present)
-			}
+		if !seqsClose(actual, expected, prec) {
+			t.Errorf("expected %v but got %v", actual.Output(), expected.Output())
 		}
 	})
 }

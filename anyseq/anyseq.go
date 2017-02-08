@@ -46,6 +46,9 @@ type Seq interface {
 	// It is guaranteed that, if a sequence is not present at
 	// timestep t, it will not be present at any timestep
 	// after t.
+	//
+	// No batches should be "empty"--i.e. should have zero
+	// timesteps.
 	Output() []*Batch
 
 	// Vars returns the variables upon which the output

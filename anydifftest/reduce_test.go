@@ -65,12 +65,57 @@ func TestExpandBatch(t *testing.T) {
 	}
 }
 
-func TestReduce(t *testing.T) {
+func TestReduceOut(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		inSeq := anyseq.ConstSeqList([][]anyvec.Vector{
+			{
+				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
+				c.MakeVectorData(c.MakeNumericList([]float64{-2, 1})),
+				c.MakeVectorData(c.MakeNumericList([]float64{2, -1})),
+			},
+			{},
+			{
+				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
+				c.MakeVectorData(c.MakeNumericList([]float64{0, 5})),
+			},
+			{
+				c.MakeVectorData(c.MakeNumericList([]float64{9, 1})),
+			},
+			{},
+			{
+				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
+				c.MakeVectorData(c.MakeNumericList([]float64{-2, 1})),
+				c.MakeVectorData(c.MakeNumericList([]float64{2, -1})),
+				c.MakeVectorData(c.MakeNumericList([]float64{-9, 0})),
+			},
+		})
+		actual := anyseq.Reduce(inSeq, []bool{true, true, false, true, false, false})
+		expected := anyseq.ConstSeqList([][]anyvec.Vector{
+			{
+				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
+				c.MakeVectorData(c.MakeNumericList([]float64{-2, 1})),
+				c.MakeVectorData(c.MakeNumericList([]float64{2, -1})),
+			},
+			{},
+			{},
+			{
+				c.MakeVectorData(c.MakeNumericList([]float64{9, 1})),
+			},
+			{},
+			{},
+		})
+		if !seqsClose(actual, expected, prec) {
+			t.Errorf("expected %v but got %v", expected.Output(), actual.Output())
+		}
+	})
+}
+
+func TestReduceProp(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		inSeq, varList := makeBasicTestSeqs(c)
 		ch := &SeqChecker{
 			F: func() anyseq.Seq {
-				return anyseq.Reduce(inSeq, []bool{true, false, true, false})
+				return anyseq.Reduce(inSeq, []bool{false, true, false, true})
 			},
 			V: varList,
 		}
