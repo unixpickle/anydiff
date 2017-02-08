@@ -166,7 +166,7 @@ func (m *mapNResult) Propagate(u []*Batch, g anydiff.Grad) {
 			for j, x := range m.Pool[i] {
 				d := x.Vector.Creator().MakeVector(x.Vector.Len())
 				g[x] = d
-				downstream[i][j] = &Batch{Packed: d, Present: u[i].Present}
+				downstream[i][j] = &Batch{Packed: d, Present: u[j].Present}
 			}
 		}
 	}
