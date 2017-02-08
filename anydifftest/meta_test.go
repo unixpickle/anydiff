@@ -40,6 +40,24 @@ func TestSeqPool(t *testing.T) {
 	})
 }
 
+func TestSeqPoolAsym(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		inSeq, varList := makeBasicTestSeqs(c)
+		outSeq := anyseq.ConstSeqList([][]anyvec.Vector{
+			{c.MakeVectorData(c.MakeNumericList([]float64{1, 2}))},
+		})
+		ch := &SeqChecker{
+			F: func() anyseq.Seq {
+				return anyseq.Pool(inSeq, func(s anyseq.Seq) anyseq.Seq {
+					return outSeq
+				})
+			},
+			V: varList,
+		}
+		ch.FullCheck(t)
+	})
+}
+
 func TestSeqPoolToVec(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		inSeq, varList := makeBasicTestSeqs(c)

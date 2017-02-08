@@ -57,10 +57,11 @@ func (p *poolRes) Propagate(u []*Batch, grad anydiff.Grad) {
 	}
 	p.Res.Propagate(u, grad)
 	var downstream []*Batch
+	inOut := p.In.Output()
 	for i, x := range p.Pool {
 		downstream = append(downstream, &Batch{
 			Packed:  grad[x],
-			Present: u[i].Present,
+			Present: inOut[i].Present,
 		})
 		delete(grad, x)
 	}
