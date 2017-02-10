@@ -9,7 +9,7 @@ import (
 
 func TestReverseOut(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
-		inSeq := anyseq.ConstSeqList([][]anyvec.Vector{
+		inSeq := anyseq.ConstSeqList(c, [][]anyvec.Vector{
 			{
 				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
 				c.MakeVectorData(c.MakeNumericList([]float64{-2, 1})),
@@ -32,7 +32,7 @@ func TestReverseOut(t *testing.T) {
 			},
 		})
 		actual := anyseq.Reverse(inSeq)
-		expected := anyseq.ConstSeqList([][]anyvec.Vector{
+		expected := anyseq.ConstSeqList(c, [][]anyvec.Vector{
 			{
 				c.MakeVectorData(c.MakeNumericList([]float64{2, -1})),
 				c.MakeVectorData(c.MakeNumericList([]float64{-2, 1})),

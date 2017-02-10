@@ -67,7 +67,7 @@ func TestExpandBatch(t *testing.T) {
 
 func TestReduceOut(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
-		inSeq := anyseq.ConstSeqList([][]anyvec.Vector{
+		inSeq := anyseq.ConstSeqList(c, [][]anyvec.Vector{
 			{
 				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
 				c.MakeVectorData(c.MakeNumericList([]float64{-2, 1})),
@@ -90,7 +90,7 @@ func TestReduceOut(t *testing.T) {
 			},
 		})
 		actual := anyseq.Reduce(inSeq, []bool{true, true, false, true, false, false})
-		expected := anyseq.ConstSeqList([][]anyvec.Vector{
+		expected := anyseq.ConstSeqList(c, [][]anyvec.Vector{
 			{
 				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
 				c.MakeVectorData(c.MakeNumericList([]float64{-2, 1})),

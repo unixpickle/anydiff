@@ -71,6 +71,9 @@ func (v *SeqChecker) Approx(variable *anydiff.Var, idx int) anyvec.Vector {
 // component using automatic differentiation.
 func (v *SeqChecker) Exact(comp int, g anydiff.Grad) {
 	out := v.F()
+	if out.Creator() == nil {
+		panic("missing creator")
+	}
 	if !g.Intersects(out.Vars()) {
 		return
 	}
@@ -129,6 +132,10 @@ func accumulateSeq(in anyseq.Seq) anyseq.Seq {
 		Out: out,
 		In:  in,
 	}
+}
+
+func (a *accumulatorSeq) Creator() anyvec.Creator {
+	return a.In.Creator()
 }
 
 func (a *accumulatorSeq) Output() []*anyseq.Batch {

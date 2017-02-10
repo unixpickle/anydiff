@@ -19,6 +19,10 @@ func Reverse(s Seq) Seq {
 	}
 }
 
+func (r *reverseRes) Creator() anyvec.Creator {
+	return r.In.Creator()
+}
+
 func (r *reverseRes) Output() []*Batch {
 	return r.Out
 }
@@ -50,7 +54,7 @@ func reverseSeqs(b []*Batch) []*Batch {
 	for _, x := range seqs {
 		reverseVecs(x)
 	}
-	return ConstSeqList(seqs).Output()
+	return ConstSeqList(nil, seqs).Output()
 }
 
 func reverseVecs(v []anyvec.Vector) {

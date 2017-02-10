@@ -41,6 +41,11 @@ func (b *Batch) NumPresent() int {
 
 // A Seq represents a batch of differentiable sequences.
 type Seq interface {
+	// Creator returns the underlying vector creator.
+	// All sequences must have creators, even if they are
+	// empty.
+	Creator() anyvec.Creator
+
 	// Output returns the outputs of the batch.
 	//
 	// It is guaranteed that, if a sequence is not present at

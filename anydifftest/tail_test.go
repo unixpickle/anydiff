@@ -10,7 +10,7 @@ import (
 
 func TestTailOutput(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
-		inSeq := anyseq.ConstSeqList([][]anyvec.Vector{
+		inSeq := anyseq.ConstSeqList(c, [][]anyvec.Vector{
 			{
 				c.MakeVectorData(c.MakeNumericList([]float64{1, 2})),
 				c.MakeVectorData(c.MakeNumericList([]float64{-2, 1})),
@@ -74,7 +74,7 @@ func TestTail(t *testing.T) {
 				varList = append(varList, v)
 			}
 		}
-		inSeq := anyseq.ResSeq(batches)
+		inSeq := anyseq.ResSeq(c, batches)
 		ch := &ResChecker{
 			F: func() anydiff.Res {
 				return anyseq.Tail(inSeq)

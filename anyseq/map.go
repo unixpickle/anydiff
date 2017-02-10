@@ -1,6 +1,9 @@
 package anyseq
 
-import "github.com/unixpickle/anydiff"
+import (
+	"github.com/unixpickle/anydiff"
+	"github.com/unixpickle/anyvec"
+)
 
 type mapResult struct {
 	In   Seq
@@ -45,6 +48,10 @@ func Map(s Seq, f func(v anydiff.Res, n int) anydiff.Res) Seq {
 		Out:  out,
 		V:    allVars,
 	}
+}
+
+func (m *mapResult) Creator() anyvec.Creator {
+	return m.In.Creator()
 }
 
 func (m *mapResult) Output() []*Batch {
@@ -148,6 +155,10 @@ func MapN(f func(n int, v ...anydiff.Res) anydiff.Res, s ...Seq) Seq {
 		Out:  out,
 		V:    allVars,
 	}
+}
+
+func (m *mapNResult) Creator() anyvec.Creator {
+	return m.In[0].Creator()
 }
 
 func (m *mapNResult) Output() []*Batch {

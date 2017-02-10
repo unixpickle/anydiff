@@ -111,6 +111,10 @@ func Reduce(s Seq, present []bool) Seq {
 	return res
 }
 
+func (r *reduceRes) Creator() anyvec.Creator {
+	return r.In.Creator()
+}
+
 func (r *reduceRes) Output() []*Batch {
 	return r.Out
 }
@@ -156,6 +160,10 @@ func Prune(s Seq) Seq {
 		out[i] = &Batch{Packed: x.Packed, Present: newPres}
 	}
 	return &pruneRes{In: s, Out: out}
+}
+
+func (p *pruneRes) Creator() anyvec.Creator {
+	return p.In.Creator()
 }
 
 func (p *pruneRes) Output() []*Batch {

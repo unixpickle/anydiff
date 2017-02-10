@@ -10,11 +10,9 @@ import (
 // sequence ends first).
 //
 // If a sequence is empty, it is ignored.
-// However, at least one sequence must have at least one
-// timestep.
 func Tail(seq Seq) anydiff.Res {
 	if len(seq.Output()) == 0 {
-		panic("sequences may not all be empty")
+		return anydiff.NewConst(seq.Creator().MakeVector(0))
 	}
 	inBatches := seq.Output()
 	var outVecs []anyvec.Vector
@@ -28,7 +26,7 @@ func Tail(seq Seq) anydiff.Res {
 	if len(outVecs) == 0 {
 		panic("sequences may not all be empty")
 	}
-	out := outVecs[0].Creator().Concat(outVecs...)
+	out := seq.Creator().Concat(outVecs...)
 	return &tailRes{
 		In:     seq,
 		OutVec: out,

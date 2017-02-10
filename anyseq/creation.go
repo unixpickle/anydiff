@@ -13,6 +13,7 @@ type ResBatch struct {
 }
 
 type resSeq struct {
+	C   anyvec.Creator
 	In  []*ResBatch
 	Out []*Batch
 	V   anydiff.VarSet
@@ -20,14 +21,18 @@ type resSeq struct {
 
 // ResSeq creates a Seq which propagates itself through
 // the result batches.
-func ResSeq(b []*ResBatch) Seq {
+func ResSeq(c anyvec.Creator, b []*ResBatch) Seq {
 	out := make([]*Batch, len(b))
 	vset := anydiff.VarSet{}
 	for i, x := range b {
 		out[i] = &Batch{Packed: x.Packed.Output(), Present: x.Present}
 		vset = anydiff.MergeVarSets(vset, x.Packed.Vars())
 	}
-	return &resSeq{In: b, Out: out, V: vset}
+	return &resSeq{C: c, In: b, Out: out, V: vset}
+}
+
+func (r *resSeq) Creator() anyvec.Creator {
+	return r.C
 }
 
 func (r *resSeq) Output() []*Batch {
@@ -48,18 +53,19 @@ func (r *resSeq) Propagate(u []*Batch, g anydiff.Grad) {
 }
 
 type constSeq struct {
+	C   anyvec.Creator
 	Out []*Batch
 }
 
 // ConstSeq creates a batch of sequences from a constant
 // list of batches.
-func ConstSeq(b []*Batch) Seq {
-	return &constSeq{Out: b}
+func ConstSeq(c anyvec.Creator, b []*Batch) Seq {
+	return &constSeq{C: c, Out: b}
 }
 
 // ConstSeqList creates a constant sequence from a list
 // of unbatched sequences.
-func ConstSeqList(seqs [][]anyvec.Vector) Seq {
+func ConstSeqList(c anyvec.Creator, seqs [][]anyvec.Vector) Seq {
 	batches := []*Batch{}
 	i := 0
 	for {
@@ -81,7 +87,11 @@ func ConstSeqList(seqs [][]anyvec.Vector) Seq {
 		})
 		i++
 	}
-	return ConstSeq(batches)
+	return ConstSeq(c, batches)
+}
+
+func (c *constSeq) Creator() anyvec.Creator {
+	return c.C
 }
 
 func (c *constSeq) Output() []*Batch {

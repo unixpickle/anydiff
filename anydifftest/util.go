@@ -157,5 +157,5 @@ func makeBasicTestSeqs(c anyvec.Creator) (anyseq.Seq, []*anydiff.Var) {
 			varList = append(varList, v)
 		}
 	}
-	return anyseq.ResSeq(batches), varList
+	return anyseq.ResSeq(c, batches), varList
 }

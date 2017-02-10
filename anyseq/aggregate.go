@@ -14,7 +14,6 @@ type sumRes struct {
 // produce a single result.
 //
 // All timesteps must have the same output size.
-// The sequence must have at least one timestep.
 func Sum(s Seq) anydiff.Res {
 	var sum anyvec.Vector
 	for _, x := range s.Output() {
@@ -31,7 +30,7 @@ func Sum(s Seq) anydiff.Res {
 		}
 	}
 	if sum == nil {
-		panic("cannot sum empty sequence")
+		return anydiff.NewConst(s.Creator().MakeVector(0))
 	}
 	return &sumRes{
 		In:     s,
@@ -68,9 +67,11 @@ type sumEachRes struct {
 // packed vector of sums (one per sequence).
 // Empty sequences are ignored.
 //
-// There must be at least one non-empty sequence.
 // All timesteps must have the same output size.
 func SumEach(s Seq) anydiff.Res {
+	if len(s.Output()) == 0 {
+		return anydiff.NewConst(s.Creator().MakeVector(0))
+	}
 	out0 := s.Output()[0]
 	sum := out0.Packed.Copy()
 	for _, x := range s.Output()[1:] {

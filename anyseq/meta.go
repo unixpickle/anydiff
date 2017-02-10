@@ -15,7 +15,7 @@ func Pool(s Seq, f func(s Seq) Seq) Seq {
 		pool = append(pool, p)
 		resBatches = append(resBatches, &ResBatch{Packed: p, Present: x.Present})
 	}
-	pooledIn := ResSeq(resBatches)
+	pooledIn := ResSeq(s.Creator(), resBatches)
 	out := f(pooledIn)
 
 	vars := anydiff.MergeVarSets(out.Vars(), s.Vars())
@@ -36,6 +36,10 @@ type poolRes struct {
 	Pool []*anydiff.Var
 	Res  Seq
 	V    anydiff.VarSet
+}
+
+func (p *poolRes) Creator() anyvec.Creator {
+	return p.In.Creator()
 }
 
 func (p *poolRes) Output() []*Batch {
@@ -78,7 +82,7 @@ func PoolToVec(s Seq, f func(s Seq) anydiff.Res) anydiff.Res {
 		pool = append(pool, p)
 		resBatches = append(resBatches, &ResBatch{Packed: p, Present: x.Present})
 	}
-	pooledIn := ResSeq(resBatches)
+	pooledIn := ResSeq(s.Creator(), resBatches)
 	out := f(pooledIn)
 
 	vars := anydiff.MergeVarSets(out.Vars(), s.Vars())

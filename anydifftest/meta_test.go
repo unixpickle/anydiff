@@ -43,7 +43,7 @@ func TestSeqPool(t *testing.T) {
 func TestSeqPoolAsym(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		inSeq, varList := makeBasicTestSeqs(c)
-		outSeq := anyseq.ConstSeqList([][]anyvec.Vector{
+		outSeq := anyseq.ConstSeqList(c, [][]anyvec.Vector{
 			{c.MakeVectorData(c.MakeNumericList([]float64{1, 2}))},
 		})
 		ch := &SeqChecker{
