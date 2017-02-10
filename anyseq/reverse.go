@@ -39,18 +39,7 @@ func reverseSeqs(b []*Batch) []*Batch {
 	if len(b) == 0 {
 		return nil
 	}
-	seqs := make([][]anyvec.Vector, len(b[0].Present))
-	for _, x := range b {
-		sliceSize := x.Packed.Len() / x.NumPresent()
-		offset := 0
-		for i, pres := range x.Present {
-			if pres {
-				val := x.Packed.Slice(offset, offset+sliceSize)
-				offset += sliceSize
-				seqs[i] = append(seqs[i], val)
-			}
-		}
-	}
+	seqs := SeparateSeqs(b)
 	for _, x := range seqs {
 		reverseVecs(x)
 	}

@@ -104,3 +104,24 @@ func (c *constSeq) Vars() anydiff.VarSet {
 
 func (c *constSeq) Propagate(u []*Batch, g anydiff.Grad) {
 }
+
+// SeparateSeqs creates a separate list of vectors for
+// each sequence in the batch.
+func SeparateSeqs(b []*Batch) [][]anyvec.Vector {
+	if len(b) == 0 {
+		return nil
+	}
+	seqs := make([][]anyvec.Vector, len(b[0].Present))
+	for _, x := range b {
+		sliceSize := x.Packed.Len() / x.NumPresent()
+		offset := 0
+		for i, pres := range x.Present {
+			if pres {
+				val := x.Packed.Slice(offset, offset+sliceSize)
+				offset += sliceSize
+				seqs[i] = append(seqs[i], val)
+			}
+		}
+	}
+	return seqs
+}
