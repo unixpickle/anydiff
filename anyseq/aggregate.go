@@ -78,7 +78,7 @@ func SumEach(s Seq) anydiff.Res {
 		if x.NumPresent() == out0.NumPresent() {
 			sum.Add(x.Packed)
 		} else {
-			expBatch := ExpandBatch(x, out0.Present)
+			expBatch := x.Expand(out0.Present)
 			sum.Add(expBatch.Packed)
 		}
 	}
@@ -103,7 +103,7 @@ func (s *sumEachRes) Propagate(u anyvec.Vector, g anydiff.Grad) {
 	}
 	downstream := make([]*Batch, len(s.In.Output()))
 	for i, x := range s.In.Output() {
-		downstream[i] = ReduceBatch(uBatch, x.Present)
+		downstream[i] = uBatch.Reduce(x.Present)
 	}
 	s.In.Propagate(downstream, g)
 }

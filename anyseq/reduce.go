@@ -5,12 +5,12 @@ import (
 	"github.com/unixpickle/anyvec"
 )
 
-// ReduceBatch eliminates sequences in b to get a new
-// batch with the requested present map.
+// Reduce eliminates sequences in b to get a new batch
+// with the requested present map.
 //
 // It is invalid for present[i] to be true when
 // b.Present[i] is false.
-func ReduceBatch(b *Batch, present []bool) *Batch {
+func (b *Batch) Reduce(present []bool) *Batch {
 	n := b.NumPresent()
 	inc := b.Packed.Len() / n
 
@@ -41,13 +41,12 @@ func ReduceBatch(b *Batch, present []bool) *Batch {
 	}
 }
 
-// ExpandBatch reverses the process of ReduceBatch by
-// inserting zero entries in the batch to get a desired
-// present map.
+// Expand reverses the process of Reduce by inserting zero
+// zero entries in the batch to get a desired present map.
 //
 // It is invalid for present[i] to be false when
 // b.Present[i] is true.
-func ExpandBatch(b *Batch, present []bool) *Batch {
+func (b *Batch) Expand(present []bool) *Batch {
 	n := b.NumPresent()
 	inc := b.Packed.Len() / n
 	filler := b.Packed.Creator().MakeVector(inc)
@@ -88,7 +87,7 @@ type reduceRes struct {
 // Reduce reduces all of the batches in a Seq to be
 // subsets of the present list.
 //
-// Unlike ReduceBatch, there is no restriction on which
+// Unlike Batch.Reduce, there is no restriction on which
 // elements of present may be true.
 //
 // Removed sequences are kept in the Seq to preserve
@@ -102,7 +101,7 @@ func Reduce(s Seq, present []bool) Seq {
 		for i, b := range present {
 			p[i] = b && x.Present[i]
 		}
-		res.Out[i] = ReduceBatch(x, p)
+		res.Out[i] = x.Reduce(p)
 		if res.Out[i].NumPresent() == 0 {
 			res.Out = res.Out[:i]
 			break
@@ -127,7 +126,7 @@ func (r *reduceRes) Propagate(u []*Batch, grad anydiff.Grad) {
 	inOut := r.In.Output()
 	newU := make([]*Batch, len(inOut))
 	for i, x := range u {
-		newU[i] = ExpandBatch(x, inOut[i].Present)
+		newU[i] = x.Expand(inOut[i].Present)
 	}
 	for i := len(u); i < len(inOut); i++ {
 		newU[i] = &Batch{
