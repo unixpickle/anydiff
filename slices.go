@@ -48,3 +48,46 @@ func (s *sliceRes) Propagate(u anyvec.Vector, g Grad) {
 		s.In.Propagate(bigU, g)
 	}
 }
+
+type concatRes struct {
+	Ins    []Res
+	OutVec anyvec.Vector
+	V      VarSet
+}
+
+// Concat concatenates one or more Reses.
+func Concat(ins ...Res) Res {
+	if len(ins) == 0 {
+		panic("must take at least one argument")
+	}
+	vecs := make([]anyvec.Vector, len(ins))
+	vars := VarSet{}
+	for i, x := range ins {
+		vecs[i] = x.Output()
+		vars = MergeVarSets(vars, x.Vars())
+	}
+	return &concatRes{
+		Ins:    ins,
+		OutVec: ins[0].Output().Creator().Concat(vecs...),
+		V:      vars,
+	}
+}
+
+func (c *concatRes) Output() anyvec.Vector {
+	return c.OutVec
+}
+
+func (c *concatRes) Vars() VarSet {
+	return c.V
+}
+
+func (c *concatRes) Propagate(u anyvec.Vector, g Grad) {
+	var start int
+	for _, x := range c.Ins {
+		if g.Intersects(x.Vars()) {
+			slice := u.Slice(start, start+x.Output().Len())
+			x.Propagate(slice, g)
+		}
+		start += x.Output().Len()
+	}
+}
