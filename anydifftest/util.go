@@ -10,6 +10,7 @@ import (
 	"github.com/unixpickle/anydiff/anyseq"
 	"github.com/unixpickle/anyvec"
 	"github.com/unixpickle/anyvec/anyvec32"
+	"github.com/unixpickle/anyvec/anyvec64"
 )
 
 // SeqsClose returns true if the two sequences are
@@ -33,6 +34,9 @@ func SeqsClose(a, b anyseq.Seq, prec float64) bool {
 func runWithCreators(t *testing.T, f func(t *testing.T, c anyvec.Creator, prec float64)) {
 	t.Run("float32", func(t *testing.T) {
 		f(t, anyvec32.DefaultCreator{}, defaultPrec32)
+	})
+	t.Run("float64", func(t *testing.T) {
+		f(t, anyvec64.DefaultCreator{}, defaultPrec64)
 	})
 }
 
