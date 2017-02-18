@@ -17,6 +17,12 @@ type poolRes struct {
 // another result, using Pool can prevent that Res from
 // being propagated through multiple times.
 func Pool(r Res, f func(r Res) Res) Res {
+	switch r := r.(type) {
+	case *Var:
+		return f(r)
+	case *Const:
+		return f(r)
+	}
 	pool := NewVar(r.Output())
 	out := f(pool)
 	if !out.Vars().Has(pool) {
