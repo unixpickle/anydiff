@@ -49,3 +49,10 @@ func (g Grad) AddToVars() {
 		v.Vector.Add(x)
 	}
 }
+
+// Clear zeroes out the gradient.
+func (g Grad) Clear() {
+	for _, x := range g {
+		x.Scale(x.Creator().MakeNumeric(0))
+	}
+}
