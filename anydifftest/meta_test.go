@@ -23,6 +23,28 @@ func TestPool(t *testing.T) {
 	})
 }
 
+func TestPoolMulti(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v1 := makeRandomVec(c, 18)
+		v2 := makeRandomVec(c, 18)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				mIn := anydiff.Fuse(v1, v2)
+				mOut := anydiff.PoolMulti(mIn, func(reses []anydiff.Res) anydiff.MultiRes {
+					res1 := anydiff.Sub(reses[0], reses[1])
+					res2 := anydiff.Sub(reses[1], anydiff.Mul(reses[0], reses[1]))
+					return anydiff.Fuse(res1, res2)
+				})
+				return anydiff.Unfuse(mOut, func(reses []anydiff.Res) anydiff.Res {
+					return anydiff.Sub(reses[0], reses[1])
+				})
+			},
+			V: []*anydiff.Var{v1, v2},
+		}
+		ch.FullCheck(t)
+	})
+}
+
 func TestSeqPool(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		inSeq, varList := makeBasicTestSeqs(c)

@@ -47,9 +47,73 @@ func (p *poolRes) Vars() VarSet {
 }
 
 func (p *poolRes) Propagate(u anyvec.Vector, g Grad) {
-	poolUpstream := p.Pool.Vector.Creator().MakeVector(p.Pool.Vector.Len())
-	g[p.Pool] = poolUpstream
+	propIn := g.Intersects(p.In.Vars())
+	if propIn {
+		g[p.Pool] = p.Pool.Vector.Creator().MakeVector(p.Pool.Vector.Len())
+	}
 	p.Out.Propagate(u, g)
-	delete(g, p.Pool)
-	p.In.Propagate(poolUpstream, g)
+	if propIn {
+		down := g[p.Pool]
+		delete(g, p.Pool)
+		p.In.Propagate(down, g)
+	}
+}
+
+type poolMultiRes struct {
+	In    MultiRes
+	Out   MultiRes
+	Pools []*Var
+	V     VarSet
+}
+
+// PoolMulti splits m into separate Res objects, passes
+// the result to f, and echos the result of f in such a
+// way that m is only propagated through once.
+func PoolMulti(m MultiRes, f func(reses []Res) MultiRes) MultiRes {
+	var pool []*Var
+	var reses []Res
+	for _, x := range m.Outputs() {
+		p := NewVar(x)
+		pool = append(pool, p)
+		reses = append(reses, p)
+	}
+	out := f(reses)
+	vars := MergeVarSets(out.Vars(), m.Vars())
+	for _, x := range pool {
+		vars.Del(x)
+	}
+	return &poolMultiRes{
+		In:    m,
+		Out:   out,
+		Pools: pool,
+		V:     vars,
+	}
+}
+
+func (p *poolMultiRes) Outputs() []anyvec.Vector {
+	return p.Out.Outputs()
+}
+
+func (p *poolMultiRes) Vars() VarSet {
+	return p.V
+}
+
+func (p *poolMultiRes) Propagate(u []anyvec.Vector, g Grad) {
+	propIn := g.Intersects(p.In.Vars())
+	if propIn {
+		for _, x := range p.Pools {
+			g[x] = x.Vector.Creator().MakeVector(x.Vector.Len())
+		}
+	}
+
+	p.Out.Propagate(u, g)
+
+	if propIn {
+		down := make([]anyvec.Vector, len(p.Pools))
+		for i, x := range p.Pools {
+			down[i] = g[x]
+			delete(g, x)
+		}
+		p.In.Propagate(down, g)
+	}
 }
