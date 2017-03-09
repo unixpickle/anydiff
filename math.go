@@ -357,3 +357,14 @@ func Abs(in Res) Res {
 	sign.AddScaler(sign.Creator().MakeNumeric(-1))
 	return Mul(in, NewConst(sign))
 }
+
+// ElemMax selects the maximum of a[i] and b[i] for each
+// component index i.
+func ElemMax(a, b Res) Res {
+	aMask := a.Output().Copy()
+	aMask.Sub(b.Output())
+	anyvec.GreaterThan(aMask, aMask.Creator().MakeNumeric(0))
+	bMask := aMask.Copy()
+	anyvec.Complement(bMask)
+	return Add(Mul(a, NewConst(aMask)), Mul(b, NewConst(bMask)))
+}
