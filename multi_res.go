@@ -53,6 +53,23 @@ func (f *fuseRes) Propagate(u []anyvec.Vector, g Grad) {
 	}
 }
 
+// FuseMulti fuses together the results of multiple
+// MultiRes instances.
+func FuseMulti(m ...MultiRes) MultiRes {
+	if len(m) == 0 {
+		return Fuse()
+	} else if len(m) == 1 {
+		return m[0]
+	}
+	m1 := FuseMulti(m[:len(m)/2]...)
+	m2 := FuseMulti(m[len(m)/2:]...)
+	return PoolMulti(m1, func(m1Res []Res) MultiRes {
+		return PoolMulti(m2, func(m2Res []Res) MultiRes {
+			return Fuse(append(append([]Res{}, m1Res...), m2Res...)...)
+		})
+	})
+}
+
 type unfuseRes struct {
 	In    MultiRes
 	Out   Res
