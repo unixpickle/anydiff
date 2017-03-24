@@ -117,3 +117,14 @@ func (p *poolMultiRes) Propagate(u []anyvec.Vector, g Grad) {
 		p.In.Propagate(down, g)
 	}
 }
+
+// PoolFork pools a single input to produce multiple
+// outputs.
+//
+// This same functionality can be achieved via PoolMulti,
+// but PoolFork is more concise in a lot of cases.
+func PoolFork(r Res, f func(r Res) MultiRes) MultiRes {
+	return PoolMulti(Fuse(r), func(reses []Res) MultiRes {
+		return f(reses[0])
+	})
+}
