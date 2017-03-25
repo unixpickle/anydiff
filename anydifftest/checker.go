@@ -48,6 +48,9 @@ func Check(t *testing.T, c Checker, prec float64) {
 	for i := range jacobian {
 		jacobian[i] = anydiff.NewGrad(c.Vars()...)
 		c.Exact(i, jacobian[i])
+		if len(jacobian[i]) > len(c.Vars()) {
+			t.Error("temporary gradient variables were leaked")
+		}
 	}
 
 	for varIdx, v := range c.Vars() {
