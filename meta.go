@@ -146,7 +146,7 @@ func NoReprop(r Res) Res {
 	return &noRepropRes{Res: r}
 }
 
-func (n *noRepropRes) Propagte(u anyvec.Vector, g Grad) {
+func (n *noRepropRes) Propagate(u anyvec.Vector, g Grad) {
 	n.PropLock.Lock()
 	if n.HasPropagated {
 		n.PropLock.Unlock()
