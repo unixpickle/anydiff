@@ -1,6 +1,10 @@
 package anydiff
 
-import "github.com/unixpickle/anyvec"
+import (
+	"sync"
+
+	"github.com/unixpickle/anyvec"
+)
 
 type poolRes struct {
 	Pool *Var
@@ -127,4 +131,28 @@ func PoolFork(r Res, f func(r Res) MultiRes) MultiRes {
 	return PoolMulti(Fuse(r), func(reses []Res) MultiRes {
 		return f(reses[0])
 	})
+}
+
+type noRepropRes struct {
+	Res
+	PropLock      sync.Mutex
+	HasPropagated bool
+}
+
+// NoReprop wraps a result in such a way that, if the new
+// result is back-propagated through more than once, it
+// panics.
+func NoReprop(r Res) Res {
+	return &noRepropRes{Res: r}
+}
+
+func (n *noRepropRes) Propagte(u anyvec.Vector, g Grad) {
+	n.PropLock.Lock()
+	if n.HasPropagated {
+		n.PropLock.Unlock()
+		panic("has already propagated")
+	}
+	n.HasPropagated = true
+	n.PropLock.Unlock()
+	n.Res.Propagate(u, g)
 }
