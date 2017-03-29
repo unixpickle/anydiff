@@ -145,6 +145,21 @@ func TestMatMul(t *testing.T) {
 	})
 }
 
+func TestBatchedMatMul(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		m3x2 := makeMatrixBatch(c, testMat3x4, 3, 2, 2)
+		m2x2 := makeMatrixBatch(c, testMat2x4, 2, 2, 2)
+		vars := []*anydiff.Var{m3x2.Data.(*anydiff.Var), m2x2.Data.(*anydiff.Var)}
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.BatchedMatMul(false, false, m3x2, m2x2).Data
+			},
+			V: vars,
+		}
+		ch.FullCheck(t)
+	})
+}
+
 func TestSumRows(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		m3x4 := makeMatrix(c, testMat3x4, 3, 4)
@@ -208,5 +223,14 @@ func makeMatrix(c anyvec.Creator, d []float64, rows, cols int) *anydiff.Matrix {
 		Data: anydiff.NewVar(c.MakeVectorData(c.MakeNumericList(d))),
 		Rows: rows,
 		Cols: cols,
+	}
+}
+
+func makeMatrixBatch(c anyvec.Creator, d []float64, rows, cols, num int) *anydiff.MatrixBatch {
+	return &anydiff.MatrixBatch{
+		Data: anydiff.NewVar(c.MakeVectorData(c.MakeNumericList(d))),
+		Rows: rows,
+		Cols: cols,
+		Num:  num,
 	}
 }

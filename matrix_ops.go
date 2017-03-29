@@ -9,26 +9,13 @@ type Matrix struct {
 	Cols int
 }
 
-func (m *Matrix) anyvecMatrix() *anyvec.Matrix {
-	return &anyvec.Matrix{
-		Data: m.Data.Output(),
+func (m *Matrix) batch() *MatrixBatch {
+	return &MatrixBatch{
+		Data: m.Data,
 		Rows: m.Rows,
 		Cols: m.Cols,
+		Num:  1,
 	}
-}
-
-func (m *Matrix) anyvecUpstreamMatrix(g Grad) (mat *anyvec.Matrix, isVar bool) {
-	mat = &anyvec.Matrix{Rows: m.Rows, Cols: m.Cols}
-	if v, ok := m.Data.(*Var); ok {
-		if g[v] == nil {
-			panic("no gradient for variable")
-		}
-		mat.Data = g[v]
-		isVar = true
-	} else {
-		mat.Data = m.Data.Output().Creator().MakeVector(m.Rows * m.Cols)
-	}
-	return
 }
 
 type matMulRes struct {
@@ -41,100 +28,15 @@ type matMulRes struct {
 	M2     *Matrix
 }
 
-// MatMul multiplies two matrices
+// MatMul multiplies two matrices.
 // The trans1 and trans2 arguments indicate whether to
 // transpose m1 and m2, respectively.
 func MatMul(trans1, trans2 bool, m1, m2 *Matrix) *Matrix {
-	outRows, outCols := m1.Rows, m2.Cols
-	if trans1 {
-		outRows = m1.Cols
-	}
-	if trans2 {
-		outCols = m2.Rows
-	}
-	c := m1.Data.Output().Creator()
-	outRes := c.MakeVector(outRows * outCols)
-
-	anyM1 := m1.anyvecMatrix()
-	anyM2 := m2.anyvecMatrix()
-	anyM3 := &anyvec.Matrix{Data: outRes, Rows: outRows, Cols: outCols}
-
-	anyM3.Product(trans1, trans2, c.MakeNumeric(1), anyM1, anyM2, c.MakeNumeric(0))
-
+	res := BatchedMatMul(trans1, trans2, m1.batch(), m2.batch())
 	return &Matrix{
-		Data: &matMulRes{
-			OutRes: anyM3.Data,
-			Deps:   MergeVarSets(m1.Data.Vars(), m2.Data.Vars()),
-			Trans1: trans1,
-			Trans2: trans2,
-			M1:     m1,
-			M2:     m2,
-		},
-		Rows: outRows,
-		Cols: outCols,
-	}
-}
-
-func (m *matMulRes) Output() anyvec.Vector {
-	return m.OutRes
-}
-
-func (m *matMulRes) Vars() VarSet {
-	return m.Deps
-}
-
-func (m *matMulRes) Propagate(u anyvec.Vector, g Grad) {
-	c := m.OutRes.Creator()
-	one := c.MakeNumeric(1)
-	zero := c.MakeNumeric(0)
-
-	uMat := m.upstreamMat(u)
-
-	if g.Intersects(m.M1.Data.Vars()) {
-		mDown, isVar := m.M1.anyvecUpstreamMatrix(g)
-		scaler := zero
-		if isVar {
-			scaler = one
-		}
-		if m.Trans1 {
-			mDown.Product(m.Trans2, true, one, m.M2.anyvecMatrix(), uMat, scaler)
-		} else {
-			mDown.Product(false, !m.Trans2, one, uMat, m.M2.anyvecMatrix(), scaler)
-		}
-		if !isVar {
-			m.M1.Data.Propagate(mDown.Data, g)
-		}
-	}
-
-	if g.Intersects(m.M2.Data.Vars()) {
-		mDown, isVar := m.M2.anyvecUpstreamMatrix(g)
-		scaler := zero
-		if isVar {
-			scaler = one
-		}
-		if m.Trans2 {
-			mDown.Product(true, m.Trans1, one, uMat, m.M1.anyvecMatrix(), scaler)
-		} else {
-			mDown.Product(!m.Trans1, false, one, m.M1.anyvecMatrix(), uMat, scaler)
-		}
-		if !isVar {
-			m.M2.Data.Propagate(mDown.Data, g)
-		}
-	}
-}
-
-func (m *matMulRes) upstreamMat(u anyvec.Vector) *anyvec.Matrix {
-	outRows, outCols := m.M1.Rows, m.M2.Cols
-	if m.Trans1 {
-		outRows = m.M1.Cols
-	}
-	if m.Trans2 {
-		outCols = m.M2.Rows
-	}
-	return &anyvec.Matrix{
-		Rows: outRows,
-		Cols: outCols,
-		Data: u,
+		Data: res.Data,
+		Rows: res.Rows,
+		Cols: res.Cols,
 	}
 }
 
@@ -239,5 +141,149 @@ func (s *scaleRowsRes) Propagate(u anyvec.Vector, g Grad) {
 	if g.Intersects(s.In.Data.Vars()) {
 		anyvec.ScaleChunks(u, s.Scalers.Output())
 		s.In.Data.Propagate(u, g)
+	}
+}
+
+// A MatrixBatch is a batch of matrices, packed one after
+// another in a vector.
+type MatrixBatch struct {
+	Data Res
+	Num  int
+	Rows int
+	Cols int
+}
+
+func (m *MatrixBatch) anyvecMat() *anyvec.MatrixBatch {
+	return &anyvec.MatrixBatch{
+		Data: m.Data.Output(),
+		Num:  m.Num,
+		Rows: m.Rows,
+		Cols: m.Cols,
+	}
+}
+
+func (m *MatrixBatch) anyvecUpstream(g Grad) (mat *anyvec.MatrixBatch, isVar bool) {
+	mat = &anyvec.MatrixBatch{Rows: m.Rows, Cols: m.Cols, Num: m.Num}
+	if v, ok := m.Data.(*Var); ok {
+		if g[v] == nil {
+			panic("no gradient for variable")
+		}
+		mat.Data = g[v]
+		isVar = true
+	} else {
+		mat.Data = m.Data.Output().Creator().MakeVector(m.Rows * m.Cols * m.Num)
+	}
+	return
+}
+
+type batchedMatMulRes struct {
+	OutRes anyvec.Vector
+	Deps   VarSet
+
+	M1     *MatrixBatch
+	Trans1 bool
+	M2     *MatrixBatch
+	Trans2 bool
+}
+
+// BatchedMatMul multiplies two batches of matrices.
+// The trans1 and trans2 arguments indicate whether to
+// transpose m1 and m2, respectively.
+func BatchedMatMul(trans1, trans2 bool, m1, m2 *MatrixBatch) *MatrixBatch {
+	if m1.Num != m2.Num {
+		panic("batch size mismatch")
+	}
+	outRows, outCols := m1.Rows, m2.Cols
+	if trans1 {
+		outRows = m1.Cols
+	}
+	if trans2 {
+		outCols = m2.Rows
+	}
+	c := m1.Data.Output().Creator()
+	outRes := c.MakeVector(outRows * outCols * m1.Num)
+
+	anyM1 := m1.anyvecMat()
+	anyM2 := m2.anyvecMat()
+	anyM3 := &anyvec.MatrixBatch{Data: outRes, Num: m1.Num, Rows: outRows, Cols: outCols}
+
+	anyM3.Product(trans1, trans2, c.MakeNumeric(1), anyM1, anyM2, c.MakeNumeric(0))
+
+	return &MatrixBatch{
+		Data: &batchedMatMulRes{
+			OutRes: anyM3.Data,
+			Deps:   MergeVarSets(m1.Data.Vars(), m2.Data.Vars()),
+			Trans1: trans1,
+			Trans2: trans2,
+			M1:     m1,
+			M2:     m2,
+		},
+		Num:  m1.Num,
+		Rows: outRows,
+		Cols: outCols,
+	}
+}
+
+func (b *batchedMatMulRes) Output() anyvec.Vector {
+	return b.OutRes
+}
+
+func (b *batchedMatMulRes) Vars() VarSet {
+	return b.Deps
+}
+
+func (b *batchedMatMulRes) Propagate(u anyvec.Vector, g Grad) {
+	c := b.OutRes.Creator()
+	one := c.MakeNumeric(1)
+	zero := c.MakeNumeric(0)
+
+	uMat := b.upstreamMat(u)
+
+	if g.Intersects(b.M1.Data.Vars()) {
+		mDown, isVar := b.M1.anyvecUpstream(g)
+		scaler := zero
+		if isVar {
+			scaler = one
+		}
+		if b.Trans1 {
+			mDown.Product(b.Trans2, true, one, b.M2.anyvecMat(), uMat, scaler)
+		} else {
+			mDown.Product(false, !b.Trans2, one, uMat, b.M2.anyvecMat(), scaler)
+		}
+		if !isVar {
+			b.M1.Data.Propagate(mDown.Data, g)
+		}
+	}
+
+	if g.Intersects(b.M2.Data.Vars()) {
+		mDown, isVar := b.M2.anyvecUpstream(g)
+		scaler := zero
+		if isVar {
+			scaler = one
+		}
+		if b.Trans2 {
+			mDown.Product(true, b.Trans1, one, uMat, b.M1.anyvecMat(), scaler)
+		} else {
+			mDown.Product(!b.Trans1, false, one, b.M1.anyvecMat(), uMat, scaler)
+		}
+		if !isVar {
+			b.M2.Data.Propagate(mDown.Data, g)
+		}
+	}
+}
+
+func (b *batchedMatMulRes) upstreamMat(u anyvec.Vector) *anyvec.MatrixBatch {
+	outRows, outCols := b.M1.Rows, b.M2.Cols
+	if b.Trans1 {
+		outRows = b.M1.Cols
+	}
+	if b.Trans2 {
+		outCols = b.M2.Rows
+	}
+	return &anyvec.MatrixBatch{
+		Num:  b.M1.Num,
+		Rows: outRows,
+		Cols: outCols,
+		Data: u,
 	}
 }
