@@ -61,9 +61,9 @@ func (v *ResChecker) Approx(variable *anydiff.Var, idx int) anyvec.Vector {
 	delta := v.delta()
 	old := getComponent(variable.Vector, idx)
 	setComponent(variable.Vector, idx, old+delta)
-	posOut := v.F().Output()
+	posOut := v.F().Output().Copy()
 	setComponent(variable.Vector, idx, old-delta)
-	negOut := v.F().Output()
+	negOut := v.F().Output().Copy()
 	setComponent(variable.Vector, idx, old)
 
 	posOut.Sub(negOut)

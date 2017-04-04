@@ -37,14 +37,12 @@ func (s *sliceRes) Vars() VarSet {
 func (s *sliceRes) Propagate(u anyvec.Vector, g Grad) {
 	if v, ok := s.In.(*Var); ok {
 		if uVec, ok := g[v]; ok {
-			old := uVec.Slice(s.Start, s.End)
-			old.Add(u)
-			uVec.SetSlice(s.Start, old)
+			uVec.Slice(s.Start, s.End).Add(u)
 		}
 	} else {
 		c := s.In.Output().Creator()
 		bigU := c.MakeVector(s.In.Output().Len())
-		bigU.SetSlice(s.Start, u)
+		bigU.Slice(s.Start, s.End).Set(u)
 		s.In.Propagate(bigU, g)
 	}
 }

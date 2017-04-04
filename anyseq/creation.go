@@ -117,7 +117,7 @@ func SeparateSeqs(b []*Batch) [][]anyvec.Vector {
 		offset := 0
 		for i, pres := range x.Present {
 			if pres {
-				val := x.Packed.Slice(offset, offset+sliceSize)
+				val := x.Packed.Slice(offset, offset+sliceSize).Copy()
 				offset += sliceSize
 				seqs[i] = append(seqs[i], val)
 			}
