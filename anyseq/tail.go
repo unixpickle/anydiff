@@ -62,15 +62,9 @@ func (t *tailRes) Propagate(u anyvec.Vector, g anydiff.Grad) {
 			continue
 		}
 		t, start, end := tailVecRange(inOut, i)
-
-		uPart := u.Slice(upIdx, upIdx+(end-start))
+		upstreamPart := batchUpstream[t].Packed.Slice(start, end)
+		upstreamPart.Set(u.Slice(upIdx, upIdx+(end-start)))
 		upIdx += end - start
-
-		oldVec := batchUpstream[t].Packed
-		pre := oldVec.Slice(0, start)
-		post := oldVec.Slice(end, oldVec.Len())
-
-		batchUpstream[t].Packed = uPart.Creator().Concat(pre, uPart, post)
 	}
 
 	t.In.Propagate(batchUpstream, g)
