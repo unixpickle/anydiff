@@ -94,3 +94,23 @@ func TestSeqPoolToVec(t *testing.T) {
 		ch.FullCheck(t)
 	})
 }
+
+func TestSeqPoolFromVec(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		inSeq, varList := makeBasicTestSeqs(c)
+		inVar := anydiff.NewVar(c.MakeVector(1))
+		inVar.Vector.AddScaler(c.MakeNumeric(0.5))
+		ch := &SeqChecker{
+			F: func() anyseq.Seq {
+				squashed := anydiff.Tanh(inVar)
+				return anyseq.PoolFromVec(squashed, func(r anydiff.Res) anyseq.Seq {
+					return anyseq.Map(inSeq, func(v anydiff.Res, n int) anydiff.Res {
+						return anydiff.ScaleRepeated(v, r)
+					})
+				})
+			},
+			V: append([]*anydiff.Var{inVar}, varList...),
+		}
+		ch.FullCheck(t)
+	})
+}

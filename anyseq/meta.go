@@ -134,3 +134,51 @@ func (p *poolToVecRes) Propagate(u anyvec.Vector, grad anydiff.Grad) {
 	}
 	p.In.Propagate(downstream, grad)
 }
+
+// PoolFromVec calls f with a copy of r in such a way that
+// r will only be back-propagated through once.
+func PoolFromVec(r anydiff.Res, f func(anydiff.Res) Seq) Seq {
+	pool := anydiff.NewVar(r.Output())
+	res := f(pool)
+	v := anydiff.MergeVarSets(r.Vars(), res.Vars())
+	v.Del(pool)
+	return &poolFromVecRes{
+		In:   r,
+		Pool: pool,
+		Res:  res,
+		V:    v,
+	}
+}
+
+type poolFromVecRes struct {
+	In   anydiff.Res
+	Pool *anydiff.Var
+	Res  Seq
+	V    anydiff.VarSet
+}
+
+func (p *poolFromVecRes) Creator() anyvec.Creator {
+	return p.Res.Creator()
+}
+
+func (p *poolFromVecRes) Output() []*Batch {
+	return p.Res.Output()
+}
+
+func (p *poolFromVecRes) Vars() anydiff.VarSet {
+	return p.V
+}
+
+func (p *poolFromVecRes) Propagate(upstream []*Batch, grad anydiff.Grad) {
+	if !grad.Intersects(p.In.Vars()) {
+		p.Res.Propagate(upstream, grad)
+		return
+	}
+
+	downstream := p.Pool.Vector.Creator().MakeVector(p.Pool.Vector.Len())
+	grad[p.Pool] = downstream
+
+	p.Res.Propagate(upstream, grad)
+	delete(grad, p.Pool)
+	p.In.Propagate(downstream, grad)
+}
