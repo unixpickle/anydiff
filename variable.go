@@ -44,6 +44,16 @@ func (v VarSet) Has(Var *Var) bool {
 	return ok
 }
 
+// Slice creates a slice of variables.
+// The order is non-deterministic.
+func (v VarSet) Slice() []*Var {
+	res := make([]*Var, 0, len(v))
+	for x := range v {
+		res = append(res, x)
+	}
+	return res
+}
+
 // A Var represents any vector with respect to which
 // a gradient can be computed.
 //
