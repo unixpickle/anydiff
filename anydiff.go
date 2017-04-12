@@ -9,7 +9,7 @@ import "github.com/unixpickle/anyvec"
 // A Res is a vector which is capable of performing
 // back-propagation through itself and its ancestors.
 //
-// In general, Vecs should be thought of as immutable and
+// In general, a Res should be thought of as immutable and
 // thread-safe.
 // However, it is not safe to back-propagate through the
 // same Grad in multiple Goroutines concurrently.
