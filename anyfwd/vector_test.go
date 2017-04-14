@@ -6,6 +6,13 @@ import (
 	"github.com/unixpickle/anyvec"
 )
 
+func TestVectorSlice(t *testing.T) {
+	tester := NewTester(t)
+	tester.TestVecFunc(15, func(in anyvec.Vector) anyvec.Vector {
+		return in.Slice(0, 4)
+	})
+}
+
 func TestVectorScale(t *testing.T) {
 	tester := NewTester(t)
 	tester.TestVecFunc(15, func(in anyvec.Vector) anyvec.Vector {
