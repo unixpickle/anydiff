@@ -18,8 +18,8 @@ func TestVectorScale(t *testing.T) {
 func TestVectorAddScalar(t *testing.T) {
 	tester := NewTester(t)
 	tester.TestVecFunc(15, func(in anyvec.Vector) anyvec.Vector {
-		scaler := tester.GetComponent(in, 0)
-		in.AddScalar(scaler)
+		scalar := tester.GetComponent(in, 0)
+		in.AddScalar(scalar)
 		return in
 	})
 }
