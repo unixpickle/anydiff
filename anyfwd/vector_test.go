@@ -55,6 +55,11 @@ func TestVectorMul(t *testing.T) {
 
 func TestVectorDiv(t *testing.T) {
 	testBinOp(t, func(v1, v2 anyvec.Vector) anyvec.Vector {
+		// Prevent any near-zero divisors to avoid
+		// numerical issues.
+		v2.Slice(0, 3).AddScalar(v2.Creator().MakeNumeric(5))
+		v2.Slice(3, v2.Len()).AddScalar(v2.Creator().MakeNumeric(-5))
+
 		v1.Div(v2)
 		return v1
 	})
