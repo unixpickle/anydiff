@@ -11,8 +11,8 @@ func TestScale(t *testing.T) {
 	testScalerOp(t, anydiff.Scale)
 }
 
-func TestAddScaler(t *testing.T) {
-	testScalerOp(t, anydiff.AddScaler)
+func TestAddScalar(t *testing.T) {
+	testScalerOp(t, anydiff.AddScalar)
 }
 
 func testScalerOp(t *testing.T, f func(v anydiff.Res, s anyvec.Numeric) anydiff.Res) {

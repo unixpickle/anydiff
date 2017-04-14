@@ -105,10 +105,10 @@ func TestPowProp(t *testing.T) {
 				// Avoid numerical issues for finite differences.
 				anyvec.Rand(v.Vector, anyvec.Uniform, nil)
 				if power < 1 {
-					v.Vector.AddScaler(c.MakeNumeric(0.25))
+					v.Vector.AddScalar(c.MakeNumeric(0.25))
 				} else {
 					v.Vector.Scale(c.MakeNumeric(2))
-					v.Vector.AddScaler(c.MakeNumeric(-1))
+					v.Vector.AddScalar(c.MakeNumeric(-1))
 				}
 
 				powNum := c.MakeNumeric(power)

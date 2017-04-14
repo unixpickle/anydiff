@@ -99,7 +99,7 @@ func TestSeqPoolFromVec(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		inSeq, varList := makeBasicTestSeqs(c)
 		inVar := anydiff.NewVar(c.MakeVector(1))
-		inVar.Vector.AddScaler(c.MakeNumeric(0.5))
+		inVar.Vector.AddScalar(c.MakeNumeric(0.5))
 		ch := &SeqChecker{
 			F: func() anyseq.Seq {
 				squashed := anydiff.Tanh(inVar)

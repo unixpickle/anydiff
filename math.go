@@ -150,8 +150,8 @@ func (p *powRes) Vars() VarSet {
 
 func (p *powRes) Propagate(u anyvec.Vector, g Grad) {
 	temp := u.Creator().MakeVector(1)
-	temp.AddScaler(p.Power)
-	temp.AddScaler(temp.Creator().MakeNumeric(-1))
+	temp.AddScalar(p.Power)
+	temp.AddScalar(temp.Creator().MakeNumeric(-1))
 	powerMinusOne := anyvec.Sum(temp)
 
 	exped := p.In.Output().Copy()
@@ -354,7 +354,7 @@ func Abs(in Res) Res {
 	sign := in.Output().Copy()
 	anyvec.GreaterThan(sign, sign.Creator().MakeNumeric(0))
 	sign.Scale(sign.Creator().MakeNumeric(2))
-	sign.AddScaler(sign.Creator().MakeNumeric(-1))
+	sign.AddScalar(sign.Creator().MakeNumeric(-1))
 	return Mul(in, NewConst(sign))
 }
 

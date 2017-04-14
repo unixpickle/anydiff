@@ -37,10 +37,10 @@ type addScalerRes struct {
 	OutVec anyvec.Vector
 }
 
-// AddScaler adds a scaler to every vector component.
-func AddScaler(v Res, s anyvec.Numeric) Res {
+// AddScalar adds a scaler to every vector component.
+func AddScalar(v Res, s anyvec.Numeric) Res {
 	newData := v.Output().Copy()
-	newData.AddScaler(s)
+	newData.AddScalar(s)
 	return &addScalerRes{
 		In:     v,
 		OutVec: newData,
