@@ -114,5 +114,8 @@ func (c *Creator) Concat(vs ...anyvec.Vector) anyvec.Vector {
 
 // MakeMapper creates a Mapper based on the lookup table.
 func (c *Creator) MakeMapper(inSize int, table []int) anyvec.Mapper {
-	return &mapper{creator: c}
+	return &Mapper{
+		CreatorPtr:  c,
+		ValueMapper: c.ValueCreator.MakeMapper(inSize, table),
+	}
 }
