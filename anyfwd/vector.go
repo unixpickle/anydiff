@@ -175,7 +175,7 @@ func (v *Vector) Div(v1 anyvec.Vector) {
 		grad.Div(vec1.Values)
 		quotPart := v.Values.Copy()
 		quotPart.Mul(vec1.Jacobian[i])
-		vec1Squared := vec1.Values
+		vec1Squared := vec1.Values.Copy()
 		anyvec.Pow(vec1Squared, vec1Squared.Creator().MakeNumeric(2))
 		quotPart.Div(vec1Squared)
 		grad.Sub(quotPart)
