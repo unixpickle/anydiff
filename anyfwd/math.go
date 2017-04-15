@@ -51,6 +51,34 @@ func (v *Vector) Sigmoid() {
 	v.mulJacobian(deriv)
 }
 
+// ClipPos clips the components to non-negative values.
+func (v *Vector) ClipPos() {
+	mask := v.Values.Copy()
+	anyvec.GreaterThan(mask, mask.Creator().MakeNumeric(0))
+	v.Values.Mul(mask)
+	v.mulJacobian(mask)
+}
+
+// Pow raises each component to power p.
+//
+// Currently, this only supports constant exponents.
+func (v *Vector) Pow(p anyvec.Numeric) {
+	num := v.convertNum(p)
+
+	if !v.CreatorPtr.constant(num) {
+		panic("exponent is not constant")
+	}
+
+	pMinusOne := v.addNumerics(num.Value, v.CreatorPtr.ValueCreator.MakeNumeric(-1))
+
+	deriv := v.Values.Copy()
+	anyvec.Pow(deriv, pMinusOne)
+	deriv.Scale(num.Value)
+
+	v.mulJacobian(deriv)
+	anyvec.Pow(v.Values, num.Value)
+}
+
 func (v *Vector) mulJacobian(rowScaler anyvec.Vector) {
 	for _, grad := range v.Jacobian {
 		grad.Mul(rowScaler)

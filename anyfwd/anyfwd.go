@@ -4,7 +4,11 @@
 // system.
 package anyfwd
 
-import "github.com/unixpickle/anyvec"
+import (
+	"reflect"
+
+	"github.com/unixpickle/anyvec"
+)
 
 const badJacobianErr = "bad jacobian size"
 
@@ -118,4 +122,14 @@ func (c *Creator) MakeMapper(inSize int, table []int) anyvec.Mapper {
 		CreatorPtr:  c,
 		ValueMapper: c.ValueCreator.MakeMapper(inSize, table),
 	}
+}
+
+func (c *Creator) constant(n Numeric) bool {
+	zero := c.ValueCreator.MakeNumeric(0)
+	for _, grad := range n.Grad {
+		if !reflect.DeepEqual(grad, zero) {
+			return false
+		}
+	}
+	return true
 }
