@@ -79,6 +79,28 @@ func (v *Vector) Pow(p anyvec.Numeric) {
 	anyvec.Pow(v.Values, num.Value)
 }
 
+// ElemMax sets each element of v to the max of that
+// element and the corresponding element of v1.
+func (v *Vector) ElemMax(v1 anyvec.Vector) {
+	vec := v.convertVec(v1)
+
+	columnMatrix := func(v1, v2 anyvec.Vector) anyvec.Vector {
+		joined := v1.Creator().Concat(v1, v2)
+		transposed := joined.Creator().MakeVector(joined.Len())
+		anyvec.Transpose(joined, transposed, 2)
+		return transposed
+	}
+
+	valColumns := columnMatrix(v.Values, vec.Values)
+	maxMap := anyvec.MapMax(valColumns, 2)
+	maxMap.Map(valColumns, v.Values)
+
+	for i, grad := range v.Jacobian {
+		columns := columnMatrix(grad, vec.Jacobian[i])
+		maxMap.Map(columns, grad)
+	}
+}
+
 func (v *Vector) mulJacobian(rowScaler anyvec.Vector) {
 	for _, grad := range v.Jacobian {
 		grad.Mul(rowScaler)

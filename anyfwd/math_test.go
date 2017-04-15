@@ -1,6 +1,7 @@
 package anyfwd
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/unixpickle/anyvec"
@@ -50,6 +51,24 @@ func TestPow(t *testing.T) {
 	testUnaryOp(t, func(v anyvec.Vector) {
 		v.AddScalar(v.Creator().MakeNumeric(3))
 		anyvec.Pow(v, v.Creator().MakeNumeric(-1))
+	})
+}
+
+func TestElemMax(t *testing.T) {
+	tester := NewTester(t)
+	tester.TestVecFunc(16, func(in anyvec.Vector) anyvec.Vector {
+		vec1 := in.Slice(0, 8)
+		vec2 := in.Slice(8, 16)
+		r := rand.New(rand.NewSource(1))
+		for i, j := range r.Perm(vec2.Len()) {
+			if i < vec2.Len()/2 {
+				vec2.Slice(j, j+1).AddScalar(vec2.Creator().MakeNumeric(6))
+			} else {
+				vec2.Slice(j, j+1).AddScalar(vec2.Creator().MakeNumeric(-6))
+			}
+		}
+		anyvec.ElemMax(vec1, vec2)
+		return in
 	})
 }
 
