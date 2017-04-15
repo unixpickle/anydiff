@@ -24,7 +24,11 @@ func TestExp(t *testing.T) {
 }
 
 func TestLog(t *testing.T) {
-	testUnaryOp(t, anyvec.Log)
+	testUnaryOp(t, func(v anyvec.Vector) {
+		// Make sure all the values are positive.
+		v.AddScalar(v.Creator().MakeNumeric(10))
+		anyvec.Log(v)
+	})
 }
 
 func TestSigmoid(t *testing.T) {

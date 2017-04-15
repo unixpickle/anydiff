@@ -1,6 +1,7 @@
 package anyfwd
 
 import (
+	"math"
 	"testing"
 
 	"github.com/unixpickle/anyvec"
@@ -47,6 +48,13 @@ func (t *Tester) TestVecFunc(inSize int, f func(in anyvec.Vector) anyvec.Vector)
 	}
 	actualOut := f(inVec.Copy()).Copy().(*Vector)
 	expectedOut := t.approxFwdDiff(inVec, f)
+
+	if t.containsNaNs(actualOut) {
+		t.Test.Errorf("actual output contains NaNs: %v", actualOut.Data())
+	}
+	if t.containsNaNs(expectedOut) {
+		t.Test.Errorf("expected output contains NaNs: %v", expectedOut.Data())
+	}
 
 	if !t.valueVecsClose(actualOut.Values, expectedOut.Values) {
 		t.Test.Errorf("value should be %v but got %v", expectedOut.Values.Data(),
@@ -119,4 +127,29 @@ func (t *Tester) approxGrad(in, grad anyvec.Vector,
 	out1.Scale(out1.Creator().MakeNumeric(0.5 / diffDelta))
 
 	return out1
+}
+
+func (t *Tester) containsNaNs(vec anyvec.Vector) bool {
+	switch data := vec.Data().(type) {
+	case []float64:
+		for _, x := range data {
+			if math.IsNaN(x) {
+				return true
+			}
+		}
+		return false
+	case NumericList:
+		vector := vec.(*Vector)
+		if t.containsNaNs(vector.Values) {
+			return true
+		}
+		for _, grad := range vector.Jacobian {
+			if t.containsNaNs(grad) {
+				return true
+			}
+		}
+		return false
+	default:
+		panic("unknown vector type")
+	}
 }
