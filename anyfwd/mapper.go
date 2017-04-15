@@ -49,3 +49,12 @@ func (m *Mapper) MapTranspose(in, out anyvec.Vector) {
 		m.ValueMapper.MapTranspose(x, vout.Jacobian[i])
 	}
 }
+
+// MapMax creates a *Mapper which selects the maximum
+// element in each row of v.
+func (v *Vector) MapMax(cols int) anyvec.Mapper {
+	return &Mapper{
+		CreatorPtr:  v.CreatorPtr,
+		ValueMapper: anyvec.MapMax(v.Values, cols),
+	}
+}
