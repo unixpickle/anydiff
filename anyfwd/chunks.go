@@ -23,6 +23,16 @@ func (v *Vector) ScaleRepeated(scalers anyvec.Vector) {
 	v.multiplicativeChunkOp(scalers, anyvec.ScaleRepeated)
 }
 
+// SumRows sums the rows of a row-major matrix.
+func (v *Vector) SumRows(cols int) anyvec.Vector {
+	return v.dimensionSumOp(cols, anyvec.SumRows)
+}
+
+// SumCols sums the columns of a row-major matrix.
+func (v *Vector) SumCols(rows int) anyvec.Vector {
+	return v.dimensionSumOp(rows, anyvec.SumCols)
+}
+
 func (v *Vector) additiveChunkOp(v1 anyvec.Vector, f func(v1, v2 anyvec.Vector)) {
 	vec := v.convertVec(v1)
 	f(v.Values, vec.Values)
@@ -42,4 +52,17 @@ func (v *Vector) multiplicativeChunkOp(v1 anyvec.Vector, f func(v1, v2 anyvec.Ve
 		f(grad, vec.Values)
 		grad.Add(product1)
 	}
+}
+
+func (v *Vector) dimensionSumOp(otherDim int,
+	f func(anyvec.Vector, int) anyvec.Vector) anyvec.Vector {
+	res := &Vector{
+		CreatorPtr: v.CreatorPtr,
+		Values:     f(v.Values, otherDim),
+		Jacobian:   make([]anyvec.Vector, len(v.Jacobian)),
+	}
+	for i, grad := range v.Jacobian {
+		res.Jacobian[i] = f(grad, otherDim)
+	}
+	return res
 }

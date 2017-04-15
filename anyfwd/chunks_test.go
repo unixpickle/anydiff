@@ -26,7 +26,7 @@ func TestScaleChunks(t *testing.T) {
 	})
 }
 
-func AddRepeated(t *testing.T) {
+func TestAddRepeated(t *testing.T) {
 	tester := NewTester(t)
 	tester.TestVecFunc(15+7, func(in anyvec.Vector) anyvec.Vector {
 		v1 := in.Slice(0, 15)
@@ -36,12 +36,26 @@ func AddRepeated(t *testing.T) {
 	})
 }
 
-func ScaleRepeated(t *testing.T) {
+func TestScaleRepeated(t *testing.T) {
 	tester := NewTester(t)
 	tester.TestVecFunc(15+7, func(in anyvec.Vector) anyvec.Vector {
 		v1 := in.Slice(0, 15)
 		v2 := in.Slice(15, 15+7)
 		anyvec.ScaleRepeated(v1, v2)
 		return in
+	})
+}
+
+func TestSumRows(t *testing.T) {
+	tester := NewTester(t)
+	tester.TestVecFunc(18, func(in anyvec.Vector) anyvec.Vector {
+		return anyvec.SumRows(in, 6)
+	})
+}
+
+func TestSumCols(t *testing.T) {
+	tester := NewTester(t)
+	tester.TestVecFunc(18, func(in anyvec.Vector) anyvec.Vector {
+		return anyvec.SumRows(in, 3)
 	})
 }
