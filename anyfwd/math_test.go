@@ -72,6 +72,28 @@ func TestElemMax(t *testing.T) {
 	})
 }
 
+func TestAddLogs(t *testing.T) {
+	tester := NewTester(t)
+	tester.TestVecFunc(15, func(in anyvec.Vector) anyvec.Vector {
+		return anyvec.AddLogs(in, 3)
+	})
+	tester.TestVecFunc(15, func(in anyvec.Vector) anyvec.Vector {
+		return anyvec.AddLogs(in, 5)
+	})
+}
+
+func TestLogSoftmax(t *testing.T) {
+	tester := NewTester(t)
+	tester.TestVecFunc(15, func(in anyvec.Vector) anyvec.Vector {
+		anyvec.LogSoftmax(in, 3)
+		return in
+	})
+	tester.TestVecFunc(15, func(in anyvec.Vector) anyvec.Vector {
+		anyvec.LogSoftmax(in, 5)
+		return in
+	})
+}
+
 func testUnaryOp(t *testing.T, f func(v anyvec.Vector)) {
 	tester := NewTester(t)
 	tester.TestVecFunc(16, func(in anyvec.Vector) anyvec.Vector {

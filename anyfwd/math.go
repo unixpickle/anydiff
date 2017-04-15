@@ -101,6 +101,55 @@ func (v *Vector) ElemMax(v1 anyvec.Vector) {
 	}
 }
 
+// AddLogs applies addition in the log domain.
+func (v *Vector) AddLogs(chunkSize int) anyvec.Vector {
+	if chunkSize == 0 {
+		chunkSize = v.Len()
+	}
+
+	sums := anyvec.AddLogs(v.Values, chunkSize)
+
+	softmax := v.Values.Copy()
+	negSums := sums.Copy()
+	negSums.Scale(negSums.Creator().MakeNumeric(-1))
+	anyvec.AddChunks(softmax, negSums)
+	anyvec.Exp(softmax)
+
+	res := &Vector{
+		CreatorPtr: v.CreatorPtr,
+		Values:     sums,
+		Jacobian:   make([]anyvec.Vector, len(v.Jacobian)),
+	}
+
+	for i, grad := range v.Jacobian {
+		product := grad.Copy()
+		product.Mul(softmax)
+		res.Jacobian[i] = anyvec.SumCols(product, product.Len()/chunkSize)
+	}
+
+	return res
+}
+
+// LogSoftmax computes the logarithm of the softmax.
+func (v *Vector) LogSoftmax(chunkSize int) {
+	if chunkSize == 0 {
+		chunkSize = v.Len()
+	}
+
+	anyvec.LogSoftmax(v.Values, chunkSize)
+
+	softmax := v.Values.Copy()
+	anyvec.Exp(softmax)
+	softmax.Scale(softmax.Creator().MakeNumeric(-1))
+
+	for _, grad := range v.Jacobian {
+		product := grad.Copy()
+		product.Mul(softmax)
+		offsets := anyvec.SumCols(product, product.Len()/chunkSize)
+		anyvec.AddChunks(grad, offsets)
+	}
+}
+
 func (v *Vector) mulJacobian(rowScaler anyvec.Vector) {
 	for _, grad := range v.Jacobian {
 		grad.Mul(rowScaler)
