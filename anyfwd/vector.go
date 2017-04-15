@@ -79,11 +79,7 @@ func (v *Vector) Slice(start, end int) anyvec.Vector {
 
 // Scale scales the vector by a Numeric.
 func (v *Vector) Scale(s anyvec.Numeric) {
-	num := s.(Numeric)
-	if len(num.Grad) != len(v.Jacobian) {
-		panic(badJacobianErr)
-	}
-
+	num := v.convertNum(s)
 	for i, grad := range v.Jacobian {
 		// Product rule.
 		grad.Scale(num.Value)
@@ -91,16 +87,12 @@ func (v *Vector) Scale(s anyvec.Numeric) {
 		scaledVal.Scale(num.Grad[i])
 		grad.Add(scaledVal)
 	}
-
 	v.Values.Scale(num.Value)
 }
 
 // AddScalar adds a Numeric to the vector.
 func (v *Vector) AddScalar(s anyvec.Numeric) {
-	num := s.(Numeric)
-	if len(num.Grad) != len(v.Jacobian) {
-		panic(badJacobianErr)
-	}
+	num := v.convertNum(s)
 	v.Values.AddScalar(num.Value)
 	for i, x := range v.Jacobian {
 		x.AddScalar(num.Grad[i])
@@ -109,10 +101,7 @@ func (v *Vector) AddScalar(s anyvec.Numeric) {
 
 // Dot computes a dot product.
 func (v *Vector) Dot(v1 anyvec.Vector) anyvec.Numeric {
-	vec1 := v1.(*Vector)
-	if len(v.Jacobian) != len(vec1.Jacobian) {
-		panic(badJacobianErr)
-	}
+	vec1 := v.convertVec(v1)
 	res := Numeric{Value: v.Values.Dot(vec1.Values)}
 	for i, grad := range v.Jacobian {
 		grad1 := vec1.Jacobian[i]
@@ -126,10 +115,7 @@ func (v *Vector) Dot(v1 anyvec.Vector) anyvec.Numeric {
 
 // Add performs component-wise addition.
 func (v *Vector) Add(v1 anyvec.Vector) {
-	vec1 := v1.(*Vector)
-	if len(v.Jacobian) != len(vec1.Jacobian) {
-		panic(badJacobianErr)
-	}
+	vec1 := v.convertVec(v1)
 	v.Values.Add(vec1.Values)
 	for i, grad := range v.Jacobian {
 		grad.Add(vec1.Jacobian[i])
@@ -138,10 +124,7 @@ func (v *Vector) Add(v1 anyvec.Vector) {
 
 // Sub performs component-wise subtraction.
 func (v *Vector) Sub(v1 anyvec.Vector) {
-	vec1 := v1.(*Vector)
-	if len(v.Jacobian) != len(vec1.Jacobian) {
-		panic(badJacobianErr)
-	}
+	vec1 := v.convertVec(v1)
 	v.Values.Sub(vec1.Values)
 	for i, grad := range v.Jacobian {
 		grad.Sub(vec1.Jacobian[i])
@@ -150,10 +133,7 @@ func (v *Vector) Sub(v1 anyvec.Vector) {
 
 // Mul performs component-wise multiplication.
 func (v *Vector) Mul(v1 anyvec.Vector) {
-	vec1 := v1.(*Vector)
-	if len(v.Jacobian) != len(vec1.Jacobian) {
-		panic(badJacobianErr)
-	}
+	vec1 := v.convertVec(v1)
 	for i, grad := range v.Jacobian {
 		// Product rule.
 		vals := v.Values.Copy()
@@ -166,10 +146,7 @@ func (v *Vector) Mul(v1 anyvec.Vector) {
 
 // Div performs component-wise division.
 func (v *Vector) Div(v1 anyvec.Vector) {
-	vec1 := v1.(*Vector)
-	if len(v.Jacobian) != len(vec1.Jacobian) {
-		panic(badJacobianErr)
-	}
+	vec1 := v.convertVec(v1)
 	for i, grad := range v.Jacobian {
 		// Quotient rule.
 		grad.Div(vec1.Values)
@@ -190,4 +167,20 @@ func (v *Vector) addNumerics(n1, n2 anyvec.Numeric) anyvec.Numeric {
 	vec.Slice(0, 1).AddScalar(n1)
 	vec.Slice(1, 2).AddScalar(n2)
 	return anyvec.Sum(vec)
+}
+
+func (v *Vector) convertVec(vec anyvec.Vector) *Vector {
+	v1 := vec.(*Vector)
+	if len(v.Jacobian) != len(v1.Jacobian) {
+		panic(badJacobianErr)
+	}
+	return v1
+}
+
+func (v *Vector) convertNum(num anyvec.Numeric) Numeric {
+	n1 := num.(Numeric)
+	if len(v.Jacobian) != len(n1.Grad) {
+		panic(badJacobianErr)
+	}
+	return n1
 }
