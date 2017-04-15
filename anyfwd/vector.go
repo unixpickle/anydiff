@@ -169,6 +169,14 @@ func (v *Vector) addNumerics(n1, n2 anyvec.Numeric) anyvec.Numeric {
 	return anyvec.Sum(vec)
 }
 
+// clearJacobian sets the jacobian to 0.
+func (v *Vector) clearJacobian() {
+	zero := v.Values.Creator().MakeVector(v.Values.Len())
+	for _, x := range v.Jacobian {
+		x.Set(zero)
+	}
+}
+
 func (v *Vector) convertVec(vec anyvec.Vector) *Vector {
 	v1 := vec.(*Vector)
 	if len(v.Jacobian) != len(v1.Jacobian) {
