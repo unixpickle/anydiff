@@ -10,6 +10,9 @@ import (
 //
 // It is invalid for present[i] to be true when
 // b.Present[i] is false.
+//
+// The resulting batch will have a different packed vector
+// than b (even if the present map is the same).
 func (b *Batch) Reduce(present []bool) *Batch {
 	n := b.NumPresent()
 	inc := b.Packed.Len() / n
@@ -42,10 +45,13 @@ func (b *Batch) Reduce(present []bool) *Batch {
 }
 
 // Expand reverses the process of Reduce by inserting zero
-// zero entries in the batch to get a desired present map.
+// entries in the batch to get a desired present map.
 //
 // It is invalid for present[i] to be false when
 // b.Present[i] is true.
+//
+// The resulting batch will have a different packed vector
+// than b (even if the present map is the same).
 func (b *Batch) Expand(present []bool) *Batch {
 	n := b.NumPresent()
 	inc := b.Packed.Len() / n
