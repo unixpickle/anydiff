@@ -71,7 +71,8 @@ func (c *Creator) MakeNumericList(x []float64) anyvec.NumericList {
 // MakeVector creates a zero anyvec.Vector.
 func (c *Creator) MakeVector(size int) anyvec.Vector {
 	res := &Vector{
-		Values: c.ValueCreator.MakeVector(size),
+		CreatorPtr: c,
+		Values:     c.ValueCreator.MakeVector(size),
 	}
 	for i := 0; i < c.GradSize; i++ {
 		res.Jacobian = append(res.Jacobian, c.ValueCreator.MakeVector(size))
@@ -84,7 +85,8 @@ func (c *Creator) MakeVector(size int) anyvec.Vector {
 func (c *Creator) MakeVectorData(data anyvec.NumericList) anyvec.Vector {
 	nl := data.(NumericList)
 	res := &Vector{
-		Values: c.ValueCreator.MakeVectorData(nl.Values),
+		CreatorPtr: c,
+		Values:     c.ValueCreator.MakeVectorData(nl.Values),
 	}
 	if len(nl.Jacobian) != c.GradSize {
 		panic(badJacobianErr)
@@ -109,7 +111,10 @@ func (c *Creator) Concat(vs ...anyvec.Vector) anyvec.Vector {
 			jacobianVecs[j] = append(jacobianVecs[j], grad)
 		}
 	}
-	res := &Vector{Values: c.ValueCreator.Concat(valVecs...)}
+	res := &Vector{
+		CreatorPtr: c,
+		Values:     c.ValueCreator.Concat(valVecs...),
+	}
 	for _, grad := range jacobianVecs {
 		res.Jacobian = append(res.Jacobian, c.ValueCreator.Concat(grad...))
 	}

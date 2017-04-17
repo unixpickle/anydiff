@@ -47,6 +47,9 @@ func (t *Tester) TestVecFunc(inSize int, f func(in anyvec.Vector) anyvec.Vector)
 		Jacobian:   jacobian,
 	}
 	actualOut := f(inVec.Copy()).Copy().(*Vector)
+	if actualOut.CreatorPtr == nil {
+		t.Test.Errorf("creator is nil")
+	}
 	expectedOut := t.approxFwdDiff(inVec, f)
 
 	if t.containsNaNs(actualOut) {
