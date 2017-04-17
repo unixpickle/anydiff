@@ -64,6 +64,7 @@ type Seq interface {
 	// and all of the non-constant Vecs or Seqs upon which it
 	// depends.
 	//
-	// Propagate may modify the upstream vectors as it likes.
+	// Propagate may modify the upstream vectors as it likes,
+	// but not the present maps.
 	Propagate(upstream []*Batch, grad anydiff.Grad)
 }
