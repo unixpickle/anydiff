@@ -40,8 +40,12 @@ func (v *Vector) Gemv(trans bool, m, n int, alpha anyvec.Numeric,
 		// v = alpha*A*x + beta*v
 		// v' = alpha'*A*x + alpha*A'*x + alpha*A*x' + beta'*v + beta*v'
 		//    = (alpha'*A*x + beta*v') + (alpha*A'*x + beta'*v) + alpha*A*x'
-		anyvec.Gemv(trans, m, n, alphaNum.Grad[i], aVec.Values, lda, xVec.Values,
-			incx, betaNum.Value, grad, incy)
+		if v.CreatorPtr.constant(alphaNum) {
+			grad.Scale(betaNum.Value)
+		} else {
+			anyvec.Gemv(trans, m, n, alphaNum.Grad[i], aVec.Values, lda, xVec.Values,
+				incx, betaNum.Value, grad, incy)
+		}
 
 		temp := v.Values.Copy()
 		anyvec.Gemv(trans, m, n, alphaNum.Value, aVec.Jacobian[i], lda, xVec.Values,
@@ -84,8 +88,12 @@ func (v *Vector) Gemm(transA, transB bool, m, n, k int, alpha anyvec.Numeric,
 		// C = alpha*A*B + beta*C
 		// C' = alpha'*A*B + alpha*A'*B + alpha*A*B' + beta'*C + beta*C'
 		//    = (alpha'*A*B + beta*C') + (alpha*A'*B + beta'*C) + alpha*A*B'
-		anyvec.Gemm(transA, transB, m, n, k, alphaNum.Grad[i], aVec.Values, lda, bVec.Values,
-			ldb, betaNum.Value, grad, ldc)
+		if v.CreatorPtr.constant(alphaNum) {
+			grad.Scale(betaNum.Value)
+		} else {
+			anyvec.Gemm(transA, transB, m, n, k, alphaNum.Grad[i], aVec.Values, lda, bVec.Values,
+				ldb, betaNum.Value, grad, ldc)
+		}
 
 		temp := v.Values.Copy()
 		anyvec.Gemm(transA, transB, m, n, k, alphaNum.Value, aVec.Jacobian[i], lda, bVec.Values,
@@ -114,8 +122,12 @@ func (v *Vector) BatchedGemm(transA, transB bool, num, m, n, k int, alpha anyvec
 	vcreator := aVec.Values.Creator()
 
 	for i, grad := range v.Jacobian {
-		anyvec.BatchedGemm(transA, transB, num, m, n, k, alphaNum.Grad[i],
-			aVec.Values, bVec.Values, betaNum.Value, grad)
+		if v.CreatorPtr.constant(alphaNum) {
+			grad.Scale(betaNum.Value)
+		} else {
+			anyvec.BatchedGemm(transA, transB, num, m, n, k, alphaNum.Grad[i],
+				aVec.Values, bVec.Values, betaNum.Value, grad)
+		}
 
 		temp := v.Values.Copy()
 		anyvec.BatchedGemm(transA, transB, num, m, n, k, alphaNum.Value,

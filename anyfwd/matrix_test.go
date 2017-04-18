@@ -37,6 +37,10 @@ func TestGemv(t *testing.T) {
 
 		anyvec.Gemv(true, 3, 4, alpha, matData, 5, inData, 2, beta, outData, outStride)
 
+		// Test the optimization for constant alpha.
+		alpha = in.Creator().MakeNumeric(0.7)
+		anyvec.Gemv(true, 3, 4, alpha, matData, 5, inData, 2, beta, outData, outStride)
+
 		return in
 	})
 }
@@ -62,6 +66,10 @@ func TestGemm(t *testing.T) {
 
 		anyvec.Gemm(false, true, 4, 2, 3, alpha, mat1, 5, mat2, 4, beta, mat3, ldc)
 
+		// Test the optimization for constant alpha.
+		alpha = in.Creator().MakeNumeric(0.7)
+		anyvec.Gemm(false, true, 4, 2, 3, alpha, mat1, 5, mat2, 4, beta, mat3, ldc)
+
 		return in
 	})
 }
@@ -83,6 +91,10 @@ func TestBatchedGemm(t *testing.T) {
 		alpha := tester.GetComponent(consts, 0)
 		beta := tester.GetComponent(consts, 1)
 
+		anyvec.BatchedGemm(false, true, batch, 4, 2, 3, alpha, mat1, mat2, beta, mat3)
+
+		// Test the optimization for constant alpha.
+		alpha = in.Creator().MakeNumeric(0.7)
 		anyvec.BatchedGemm(false, true, batch, 4, 2, 3, alpha, mat1, mat2, beta, mat3)
 
 		return in
