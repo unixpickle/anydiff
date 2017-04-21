@@ -129,6 +129,11 @@ func (c *Creator) MakeMapper(inSize int, table []int) anyvec.Mapper {
 	}
 }
 
+// NumOps generates a NumOps.
+func (c *Creator) NumOps() anyvec.NumOps {
+	return NumOps{ValueOps: c.ValueCreator.NumOps()}
+}
+
 func (c *Creator) constant(n Numeric) bool {
 	zero := c.ValueCreator.MakeNumeric(0)
 	for _, grad := range n.Grad {
