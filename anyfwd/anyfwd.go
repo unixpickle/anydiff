@@ -4,11 +4,7 @@
 // system.
 package anyfwd
 
-import (
-	"reflect"
-
-	"github.com/unixpickle/anyvec"
-)
+import "github.com/unixpickle/anyvec"
 
 const badJacobianErr = "bad jacobian size"
 
@@ -136,8 +132,9 @@ func (c *Creator) NumOps() anyvec.NumOps {
 
 func (c *Creator) constant(n Numeric) bool {
 	zero := c.ValueCreator.MakeNumeric(0)
+	ops := c.ValueCreator.NumOps()
 	for _, grad := range n.Grad {
-		if !reflect.DeepEqual(grad, zero) {
+		if !ops.Identical(grad, zero) {
 			return false
 		}
 	}
