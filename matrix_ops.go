@@ -144,6 +144,36 @@ func (s *scaleRowsRes) Propagate(u anyvec.Vector, g Grad) {
 	}
 }
 
+type transposeRes struct {
+	In  *Matrix
+	Out anyvec.Vector
+}
+
+// Transpose transposes the matrix.
+func Transpose(m *Matrix) *Matrix {
+	data := m.Data.Output().Creator().MakeVector(m.Data.Output().Len())
+	anyvec.Transpose(m.Data.Output(), data, m.Rows)
+	return &Matrix{
+		Data: &transposeRes{In: m, Out: data},
+		Rows: m.Cols,
+		Cols: m.Rows,
+	}
+}
+
+func (t *transposeRes) Output() anyvec.Vector {
+	return t.Out
+}
+
+func (t *transposeRes) Vars() VarSet {
+	return t.In.Data.Vars()
+}
+
+func (t *transposeRes) Propagate(u anyvec.Vector, g Grad) {
+	transU := u.Creator().MakeVector(u.Len())
+	anyvec.Transpose(u, transU, t.In.Cols)
+	t.In.Data.Propagate(transU, g)
+}
+
 // A MatrixBatch is a batch of matrices, packed one after
 // another in a vector.
 type MatrixBatch struct {

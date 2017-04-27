@@ -218,6 +218,19 @@ func TestScaleRowsProp(t *testing.T) {
 	})
 }
 
+func TestTranspose(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		m2x3 := makeMatrix(c, testMat2x3, 2, 3)
+		ch := &ResChecker{
+			F: func() anydiff.Res {
+				return anydiff.Transpose(m2x3).Data
+			},
+			V: []*anydiff.Var{m2x3.Data.(*anydiff.Var)},
+		}
+		ch.FullCheck(t)
+	})
+}
+
 func makeMatrix(c anyvec.Creator, d []float64, rows, cols int) *anydiff.Matrix {
 	return &anydiff.Matrix{
 		Data: anydiff.NewVar(c.MakeVectorData(c.MakeNumericList(d))),
