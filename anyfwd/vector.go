@@ -163,10 +163,8 @@ func (v *Vector) Div(v1 anyvec.Vector) {
 // addNumerics adds two numerics from the underlying
 // value creator.
 func (v *Vector) addNumerics(n1, n2 anyvec.Numeric) anyvec.Numeric {
-	vec := v.CreatorPtr.ValueCreator.MakeVector(2)
-	vec.Slice(0, 1).AddScalar(n1)
-	vec.Slice(1, 2).AddScalar(n2)
-	return anyvec.Sum(vec)
+	ops := v.CreatorPtr.ValueCreator.NumOps()
+	return ops.Add(n1, n2)
 }
 
 // clearJacobian sets the jacobian to 0.

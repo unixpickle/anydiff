@@ -4,7 +4,7 @@ import "github.com/unixpickle/anyvec"
 
 // NumOps implements anyvec.NumOps for Numeric values.
 type NumOps struct {
-	ValueOps anyvec.NumOps
+	Creator *Creator
 }
 
 // Add adds two Numerics.
@@ -12,11 +12,11 @@ func (n NumOps) Add(n1, n2 anyvec.Numeric) anyvec.Numeric {
 	num1 := n1.(Numeric)
 	num2 := n2.(Numeric)
 	sum := Numeric{
-		Value: n.ValueOps.Add(num1.Value, num2.Value),
+		Value: n.valueOps().Add(num1.Value, num2.Value),
 	}
 	for i, g1 := range num1.Grad {
 		g2 := num2.Grad[i]
-		sum.Grad = append(sum.Grad, n.ValueOps.Add(g1, g2))
+		sum.Grad = append(sum.Grad, n.valueOps().Add(g1, g2))
 	}
 	return sum
 }
@@ -26,11 +26,11 @@ func (n NumOps) Sub(n1, n2 anyvec.Numeric) anyvec.Numeric {
 	num1 := n1.(Numeric)
 	num2 := n2.(Numeric)
 	sum := Numeric{
-		Value: n.ValueOps.Sub(num1.Value, num2.Value),
+		Value: n.valueOps().Sub(num1.Value, num2.Value),
 	}
 	for i, g1 := range num1.Grad {
 		g2 := num2.Grad[i]
-		sum.Grad = append(sum.Grad, n.ValueOps.Sub(g1, g2))
+		sum.Grad = append(sum.Grad, n.valueOps().Sub(g1, g2))
 	}
 	return sum
 }
@@ -40,13 +40,13 @@ func (n NumOps) Mul(n1, n2 anyvec.Numeric) anyvec.Numeric {
 	num1 := n1.(Numeric)
 	num2 := n2.(Numeric)
 	sum := Numeric{
-		Value: n.ValueOps.Mul(num1.Value, num2.Value),
+		Value: n.valueOps().Mul(num1.Value, num2.Value),
 	}
 	for i, g1 := range num1.Grad {
 		g2 := num2.Grad[i]
-		productRule := n.ValueOps.Add(
-			n.ValueOps.Mul(g1, num2.Value),
-			n.ValueOps.Mul(num1.Value, g2),
+		productRule := n.valueOps().Add(
+			n.valueOps().Mul(g1, num2.Value),
+			n.valueOps().Mul(num1.Value, g2),
 		)
 		sum.Grad = append(sum.Grad, productRule)
 	}
@@ -58,15 +58,15 @@ func (n NumOps) Div(n1, n2 anyvec.Numeric) anyvec.Numeric {
 	num1 := n1.(Numeric)
 	num2 := n2.(Numeric)
 	sum := Numeric{
-		Value: n.ValueOps.Div(num1.Value, num2.Value),
+		Value: n.valueOps().Div(num1.Value, num2.Value),
 	}
 	for i, g1 := range num1.Grad {
 		g2 := num2.Grad[i]
-		quotientRule := n.ValueOps.Sub(
-			n.ValueOps.Div(g1, num2.Value),
-			n.ValueOps.Div(
-				n.ValueOps.Mul(num1.Value, g2),
-				n.ValueOps.Mul(num2.Value, num2.Value),
+		quotientRule := n.valueOps().Sub(
+			n.valueOps().Div(g1, num2.Value),
+			n.valueOps().Div(
+				n.valueOps().Mul(num1.Value, g2),
+				n.valueOps().Mul(num2.Value, num2.Value),
 			),
 		)
 		sum.Grad = append(sum.Grad, quotientRule)
@@ -74,17 +74,44 @@ func (n NumOps) Div(n1, n2 anyvec.Numeric) anyvec.Numeric {
 	return sum
 }
 
+// Pow raises n1 to the n2 power.
+//
+// This only works if n2 is a constant.
+func (n NumOps) Pow(n1, n2 anyvec.Numeric) anyvec.Numeric {
+	num1 := n1.(Numeric)
+	num2 := n2.(Numeric)
+	if !n.Creator.constant(num2) {
+		panic("exponent must be constant")
+	}
+
+	ops := n.valueOps()
+	c := n.Creator.ValueCreator
+	expMinusOne := ops.Sub(num2.Value, c.MakeNumeric(1))
+
+	res := Numeric{
+		Value: ops.Pow(num1.Value, num2.Value),
+		Grad:  make([]anyvec.Numeric, len(num1.Grad)),
+	}
+
+	deriv := ops.Mul(num2.Value, ops.Pow(num1.Value, expMinusOne))
+	for i, baseGrad := range num1.Grad {
+		res.Grad[i] = ops.Mul(baseGrad, deriv)
+	}
+
+	return res
+}
+
 // Identical checks if two Numerics are exactly identical,
 // including their derivatives.
 func (n NumOps) Identical(n1, n2 anyvec.Numeric) bool {
 	num1 := n1.(Numeric)
 	num2 := n2.(Numeric)
-	if !n.ValueOps.Identical(num1.Value, num2.Value) {
+	if !n.valueOps().Identical(num1.Value, num2.Value) {
 		return false
 	}
 	for i, g1 := range num1.Grad {
 		g2 := num2.Grad[i]
-		if !n.ValueOps.Identical(g1, g2) {
+		if !n.valueOps().Identical(g1, g2) {
 			return false
 		}
 	}
@@ -95,19 +122,23 @@ func (n NumOps) Identical(n1, n2 anyvec.Numeric) bool {
 func (n NumOps) Equal(n1, n2 anyvec.Numeric) bool {
 	num1 := n1.(Numeric)
 	num2 := n2.(Numeric)
-	return n.ValueOps.Equal(num1.Value, num2.Value)
+	return n.valueOps().Equal(num1.Value, num2.Value)
 }
 
 // Less checks if one Numeric is less than another.
 func (n NumOps) Less(n1, n2 anyvec.Numeric) bool {
 	num1 := n1.(Numeric)
 	num2 := n2.(Numeric)
-	return n.ValueOps.Less(num1.Value, num2.Value)
+	return n.valueOps().Less(num1.Value, num2.Value)
 }
 
 // Greater checks if one Numeric is greater than another.
 func (n NumOps) Greater(n1, n2 anyvec.Numeric) bool {
 	num1 := n1.(Numeric)
 	num2 := n2.(Numeric)
-	return n.ValueOps.Greater(num1.Value, num2.Value)
+	return n.valueOps().Greater(num1.Value, num2.Value)
+}
+
+func (n NumOps) valueOps() anyvec.NumOps {
+	return n.Creator.ValueCreator.NumOps()
 }

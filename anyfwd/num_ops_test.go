@@ -19,8 +19,12 @@ func TestNumericOps(t *testing.T) {
 		// Evaluate n1 + n2*(n4-n3)/n1.
 		ans := ops.Add(n1, ops.Div(ops.Mul(n2, ops.Sub(n4, n3)), n1))
 
-		res := in.Creator().MakeVector(1)
-		res.AddScalar(ans)
+		res := in.Creator().MakeVector(2)
+		res.Slice(0, 1).AddScalar(ans)
+
+		// Evaluate n2^2
+		res.Slice(1, 2).AddScalar(ops.Pow(n2, in.Creator().MakeNumeric(2)))
+
 		return res
 	})
 }
