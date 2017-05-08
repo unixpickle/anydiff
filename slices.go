@@ -1,9 +1,6 @@
 package anydiff
 
-import (
-	"github.com/unixpickle/anydiff"
-	"github.com/unixpickle/anyvec"
-)
+import "github.com/unixpickle/anyvec"
 
 type sliceRes struct {
 	In     Res
@@ -102,7 +99,7 @@ func Split(vec Res, n int) MultiRes {
 	}
 	return PoolFork(vec, func(vec Res) MultiRes {
 		chunkSize := vec.Output().Len() / n
-		var slices []anydiff.Res
+		var slices []Res
 		for i := 0; i < n; i++ {
 			slices = append(slices, Slice(vec, i*chunkSize, (i+1)*chunkSize))
 		}
