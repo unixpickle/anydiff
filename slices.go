@@ -1,6 +1,9 @@
 package anydiff
 
-import "github.com/unixpickle/anyvec"
+import (
+	"github.com/unixpickle/anydiff"
+	"github.com/unixpickle/anyvec"
+)
 
 type sliceRes struct {
 	In     Res
@@ -88,4 +91,21 @@ func (c *concatRes) Propagate(u anyvec.Vector, g Grad) {
 		}
 		start += x.Output().Len()
 	}
+}
+
+// Split splits the vector into n evenly-sized pieces.
+//
+// The vector's length must be divisible by n.
+func Split(vec Res, n int) MultiRes {
+	if vec.Output().Len()%n != 0 {
+		panic("count does not divide length")
+	}
+	return PoolFork(vec, func(vec Res) MultiRes {
+		chunkSize := vec.Output().Len() / n
+		var slices []anydiff.Res
+		for i := 0; i < n; i++ {
+			slices = append(slices, Slice(vec, i*chunkSize, (i+1)*chunkSize))
+		}
+		return Fuse(slices...)
+	})
 }
