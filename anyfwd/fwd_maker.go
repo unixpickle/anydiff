@@ -21,17 +21,22 @@ type Parameterizer interface {
 // MakeFwd promotes an object to use forward auto-diff
 // with the given Creator.
 //
-// If the object does not implement FwdMaker, this falls
-// back on Parameterizer.
-// If neither interface is available, this is a no-op.
+// If the object is an *anydiff.Var or a FwdMaker, then
+// conversion is done directly.
+// If the object does not implement FwdMaker, a fallback
+// based on Parameterizer is used.
+// If none of the above conditions are met, then the
+// object is left unchanged.
 func MakeFwd(c *Creator, obj interface{}) {
 	if fm, ok := obj.(FwdMaker); ok {
 		fm.MakeFwd(c)
+	} else if param, ok := obj.(*anydiff.Var); ok {
+		oldVec := param.Vector
+		param.Vector = c.MakeVector(oldVec.Len())
+		param.Vector.(*Vector).Values.Set(oldVec)
 	} else if p, ok := obj.(Parameterizer); ok {
 		for _, param := range p.Parameters() {
-			oldVec := param.Vector
-			param.Vector = c.MakeVector(oldVec.Len())
-			param.Vector.(*Vector).Values.Set(oldVec)
+			MakeFwd(c, param)
 		}
 	}
 }
