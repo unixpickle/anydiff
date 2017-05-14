@@ -44,6 +44,13 @@ func TestClipPos(t *testing.T) {
 	})
 }
 
+func TestRound(t *testing.T) {
+	// There is a small probability that this test will fail.
+	testUnaryOp(t, func(v anyvec.Vector) {
+		anyvec.Round(v)
+	})
+}
+
 func TestPow(t *testing.T) {
 	testUnaryOp(t, func(v anyvec.Vector) {
 		anyvec.Pow(v, v.Creator().MakeNumeric(2))

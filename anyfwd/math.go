@@ -59,6 +59,14 @@ func (v *Vector) ClipPos() {
 	v.mulJacobian(mask)
 }
 
+// Round rounds the components to whole numbers.
+//
+// The resulting derivatives will all be zero.
+func (v *Vector) Round() {
+	anyvec.Round(v.Values)
+	v.clearJacobian()
+}
+
 // Pow raises each component to power p.
 //
 // Currently, this only supports constant exponents.
