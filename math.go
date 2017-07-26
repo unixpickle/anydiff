@@ -393,3 +393,14 @@ func ElemMax(a, b Res) Res {
 	anyvec.Complement(bMask)
 	return Add(Mul(a, NewConst(aMask)), Mul(b, NewConst(bMask)))
 }
+
+// ElemMin selects the minimum of a[i] and b[i] for each
+// component index i.
+func ElemMin(a, b Res) Res {
+	aMask := a.Output().Copy()
+	aMask.Sub(b.Output())
+	anyvec.LessThan(aMask, aMask.Creator().MakeNumeric(0))
+	bMask := aMask.Copy()
+	anyvec.Complement(bMask)
+	return Add(Mul(a, NewConst(aMask)), Mul(b, NewConst(bMask)))
+}
