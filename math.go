@@ -193,6 +193,31 @@ func (c *clipPosRes) Propagate(u anyvec.Vector, g Grad) {
 	c.In.Propagate(u, g)
 }
 
+// ClipRange clips values to be in the (exclusive) range.
+func ClipRange(in Res, min, max anyvec.Numeric) Res {
+	return Pool(in, func(in Res) Res {
+		highEnough, lowEnough := in.Output().Copy(), in.Output().Copy()
+		anyvec.GreaterThan(highEnough, min)
+		anyvec.LessThan(lowEnough, max)
+
+		midRange := highEnough.Copy()
+		midRange.Mul(lowEnough)
+		middlePart := Mul(in, NewConst(midRange))
+
+		anyvec.Complement(lowEnough)
+		lowEnough.Scale(max)
+		anyvec.Complement(highEnough)
+		highEnough.Scale(min)
+		return Add(
+			middlePart,
+			Add(
+				NewConst(lowEnough),
+				NewConst(highEnough),
+			),
+		)
+	})
+}
+
 type sinRes struct {
 	In     Res
 	OutVec anyvec.Vector

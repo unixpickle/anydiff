@@ -137,6 +137,25 @@ func TestClipPos(t *testing.T) {
 	})
 }
 
+func TestClipRangeOut(t *testing.T) {
+	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
+		v := c.MakeVectorData(c.MakeNumericList([]float64{
+			0.7, 0.8, 0.9, 1.1, 1.2, 1.3,
+		}))
+		res := anydiff.ClipRange(anydiff.NewConst(v), c.MakeNumeric(0.8),
+			c.MakeNumeric(1.2))
+		actual := getComponents(res.Output())
+		expected := []float64{0.8, 0.8, 0.9, 1.1, 1.2, 1.2}
+		for i, x := range expected {
+			a := actual[i]
+			if math.IsNaN(a) || math.Abs(a-x) > prec {
+				t.Errorf("expected %v but got %v", expected, actual)
+				break
+			}
+		}
+	})
+}
+
 func TestAbsOut(t *testing.T) {
 	runWithCreators(t, func(t *testing.T, c anyvec.Creator, prec float64) {
 		v := c.MakeVectorData(c.MakeNumericList([]float64{1, -2, 3, -0.5}))
