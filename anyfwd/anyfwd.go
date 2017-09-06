@@ -130,6 +130,17 @@ func (c *Creator) NumOps() anyvec.NumOps {
 	return NumOps{Creator: c}
 }
 
+// Float64 converts the value of the numeric to float64.
+func (c *Creator) Float64(n anyvec.Numeric) float64 {
+	return c.ValueCreator.Float64(n.(Numeric).Value)
+}
+
+// Float64Slice converts the value of the list to
+// []float64.
+func (c *Creator) Float64Slice(n anyvec.NumericList) []float64 {
+	return c.ValueCreator.Float64Slice(n.(NumericList).Values)
+}
+
 func (c *Creator) constant(n Numeric) bool {
 	zero := c.ValueCreator.MakeNumeric(0)
 	ops := c.ValueCreator.NumOps()
