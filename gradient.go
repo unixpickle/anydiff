@@ -42,6 +42,13 @@ func (g Grad) Scale(scaler anyvec.Numeric) {
 	}
 }
 
+// ScaleFloat64 is like Scale, but with a float64.
+func (g Grad) ScaleFloat64(f float64) {
+	for _, x := range g {
+		x.Scale(x.Creator().MakeNumeric(f))
+	}
+}
+
 // AddToVars adds the gradient to its variables' vectors,
 // thus performing a step of gradient descent.
 func (g Grad) AddToVars() {
